@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Container } from "@/components/Container";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { FormFeedback } from "@/components/ui/FormFeedback";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -14,11 +15,13 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
     setLoading(true);
     try {
       const res = await fetch("/api/auth/signup", {
@@ -28,14 +31,18 @@ export default function SignupPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error || "Sign up failed.");
+        setError(typeof data.error === "string" ? data.error : "Sign up failed.");
         setLoading(false);
         return;
       }
-      router.push("/login");
-      router.refresh();
+      setSuccess("Account created.");
+      setLoading(false);
+      window.setTimeout(() => {
+        router.push("/login");
+        router.refresh();
+      }, 800);
     } catch {
-      setError("Something went wrong.");
+      setError("Something went wrong. Check your connection and try again.");
       setLoading(false);
     }
   };
@@ -49,6 +56,7 @@ export default function SignupPage() {
         </p>
         <Card className="mt-6 p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
+            <FormFeedback success={success || null} error={error || null} />
             <div>
               <label htmlFor="signup-email" className="block text-sm font-medium text-fix-text">
                 Email
@@ -89,8 +97,7 @@ export default function SignupPage() {
               />
               <p className="mt-0.5 text-xs text-fix-text-muted">At least 8 characters</p>
             </div>
-            {error && <p className="text-sm text-bark">{error}</p>}
-            <Button type="submit" disabled={loading} className="w-full" variant="primary">
+            <Button type="submit" disabled={loading || !!success} className="w-full" variant="primary">
               {loading ? "Creating account…" : "Create account"}
             </Button>
           </form>

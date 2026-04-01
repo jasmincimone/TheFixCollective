@@ -15,6 +15,11 @@ model User {
   passwordHash String?
   name         String?
   role         String   @default("CUSTOMER") // ADMIN | VENDOR | CUSTOMER
+  /// E.164 when set (e.g. +15551234567); unique when not null
+  phone              String?   @unique
+  phoneVerifiedAt    DateTime?
+  /// NONE | EMAIL | SMS
+  twoFactorMethod    String    @default("NONE")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   orders       Order[]
@@ -24,6 +29,42 @@ model User {
   directThreadsAsLow  DirectThread[] @relation("DirectThreadLow")
   directThreadsAsHigh DirectThread[] @relation("DirectThreadHigh")
   directMessages        DirectMessage[]
+  passwordResetTokens PasswordResetToken[]
+  loginChallenges     LoginChallenge[]
+}
+
+/// One-time password reset link tokens (hashed at rest).
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([tokenHash])
+  @@index([userId])
+}
+
+/// OTP challenges for login 2FA and phone verification.
+model LoginChallenge {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// LOGIN | PHONE_VERIFY
+  purpose    String
+  /// EMAIL | SMS
+  channel    String
+  codeHash   String
+  /// E.164 for PHONE_VERIFY (code is sent to this number)
+  targetPhone String?
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 /// Direct messages between two users. participantLowId is always lexicographically before participantHighId.

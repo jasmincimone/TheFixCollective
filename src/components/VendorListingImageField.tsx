@@ -3,6 +3,8 @@
 import { useRef, useState } from "react";
 import { ImagePlus, Loader2, X } from "lucide-react";
 
+import { FormFeedback } from "@/components/ui/FormFeedback";
+
 type Props = {
   imageUrl: string;
   onImageUrlChange: (url: string) => void;
@@ -68,6 +70,7 @@ export function VendorListingImageField({
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadErrorExtra, setUploadErrorExtra] = useState<string | null>(null);
   const [lastFileInfo, setLastFileInfo] = useState<string | null>(null);
@@ -79,6 +82,7 @@ export function VendorListingImageField({
 
     setUploadError(null);
     setUploadErrorExtra(null);
+    setUploadSuccess(null);
     setLastFileInfo(
       `${file.name || "file"} · ${(file.size / 1024).toFixed(1)} KB · type: ${file.type || "unknown"}`
     );
@@ -124,6 +128,8 @@ export function VendorListingImageField({
       }
       onImageUrlChange(data.url);
       setUploadErrorExtra(null);
+      setUploadSuccess("Uploaded. Image address filled in below.");
+      window.setTimeout(() => setUploadSuccess(null), 5000);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setUploadError(`Network or browser error: ${msg}`);
@@ -138,6 +144,7 @@ export function VendorListingImageField({
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-fix-text">Listing image</label>
+      <FormFeedback success={uploadSuccess} error={null} />
       <p className="text-xs text-fix-text-muted">
         Upload a JPEG, PNG, WebP, or GIF (max 5 MB), or set an image address below (full{" "}
         <code className="rounded bg-fix-bg-muted px-1">https://</code> link or a site path like{" "}

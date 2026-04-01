@@ -9,6 +9,7 @@ import { formatPrice } from "@/lib/format";
 import { Container } from "@/components/Container";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { FormFeedback } from "@/components/ui/FormFeedback";
 
 const SHIPPING_CENTS = 599;
 
@@ -17,6 +18,7 @@ export default function CheckoutPage() {
   const { items, itemCount, clearCart } = useCart();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -50,6 +52,7 @@ export default function CheckoutPage() {
     async (e: React.FormEvent) => {
       e.preventDefault();
       setError(null);
+      setSuccess(null);
       if (itemCount === 0) {
         setError("Your cart is empty.");
         return;
@@ -91,19 +94,23 @@ export default function CheckoutPage() {
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          setError(data.error || "Failed to start checkout.");
+          setError(typeof data.error === "string" ? data.error : "Failed to start checkout.");
           setSubmitting(false);
           return;
         }
         if (data.url) {
           clearCart();
-          window.location.href = data.url;
+          setSuccess("Submitted. Redirecting to secure payment…");
+          setSubmitting(false);
+          window.setTimeout(() => {
+            window.location.href = data.url as string;
+          }, 500);
           return;
         }
-        setError("Something went wrong. Please try again.");
+        setError("No checkout URL returned. Please try again.");
         setSubmitting(false);
       } catch {
-        setError("Something went wrong. Please try again.");
+        setError("Something went wrong. Check your connection and try again.");
         setSubmitting(false);
       }
     },
@@ -241,12 +248,14 @@ export default function CheckoutPage() {
                   <dd className="font-semibold text-fix-heading">{formatPrice(total)}</dd>
                 </div>
               </dl>
-              {error && <p className="mt-4 text-sm text-bark">{error}</p>}
+              <div className="mt-4">
+                <FormFeedback success={success} error={error} />
+              </div>
               <p className="mt-4 text-xs text-fix-text-muted">
                 You&apos;ll be redirected to Stripe to pay securely. Cards are never stored on our servers.
               </p>
-              <Button type="submit" disabled={submitting} className="mt-6 w-full" size="lg" variant="cta">
-                {submitting ? "Redirecting…" : "Proceed to payment"}
+              <Button type="submit" disabled={submitting || !!success} className="mt-6 w-full" size="lg" variant="cta">
+                {submitting || success ? "Redirecting…" : "Proceed to payment"}
               </Button>
             </Card>
           </div>

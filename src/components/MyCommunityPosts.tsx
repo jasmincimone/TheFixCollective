@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { FormFeedback } from "@/components/ui/FormFeedback";
 import { formatCommunityDate, formatCommunityDateTime } from "@/lib/formatCommunityDate";
 
 export type SerializedCommunityPost = {
@@ -27,17 +28,20 @@ export function MyCommunityPosts({ posts: initialPosts }: Props) {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   function startEdit(p: SerializedCommunityPost) {
     setEditingId(p.id);
     setDraft(p.content);
     setError(null);
+    setSuccess(null);
   }
 
   function cancelEdit() {
     setEditingId(null);
     setDraft("");
     setError(null);
+    setSuccess(null);
   }
 
   async function saveEdit(postId: string) {
@@ -48,6 +52,7 @@ export function MyCommunityPosts({ posts: initialPosts }: Props) {
     }
     setSaving(true);
     setError(null);
+    setSuccess(null);
     try {
       const res = await fetch(`/api/community/posts/${encodeURIComponent(postId)}`, {
         method: "PATCH",
@@ -56,7 +61,7 @@ export function MyCommunityPosts({ posts: initialPosts }: Props) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error || "Could not save");
+        setError(typeof data.error === "string" ? data.error : "Could not save.");
         setSaving(false);
         return;
       }
@@ -85,9 +90,11 @@ export function MyCommunityPosts({ posts: initialPosts }: Props) {
       });
       setEditingId(null);
       setDraft("");
+      setSuccess("Saved.");
+      window.setTimeout(() => setSuccess(null), 5000);
       router.refresh();
     } catch {
-      setError("Something went wrong");
+      setError("Something went wrong. Check your connection and try again.");
     } finally {
       setSaving(false);
     }
@@ -97,21 +104,24 @@ export function MyCommunityPosts({ posts: initialPosts }: Props) {
     if (!window.confirm("Delete this post? This cannot be undone.")) return;
     setDeletingId(postId);
     setError(null);
+    setSuccess(null);
     try {
       const res = await fetch(`/api/community/posts/${encodeURIComponent(postId)}`, {
         method: "DELETE",
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error || "Could not delete");
+        setError(typeof data.error === "string" ? data.error : "Could not delete.");
         setDeletingId(null);
         return;
       }
       setPosts((prev) => prev.filter((p) => p.id !== postId));
+      setSuccess("Deleted.");
+      window.setTimeout(() => setSuccess(null), 5000);
       if (editingId === postId) cancelEdit();
       router.refresh();
     } catch {
-      setError("Something went wrong");
+      setError("Something went wrong. Check your connection and try again.");
     } finally {
       setDeletingId(null);
     }
@@ -132,11 +142,7 @@ export function MyCommunityPosts({ posts: initialPosts }: Props) {
 
   return (
     <div className="space-y-4">
-      {error ? (
-        <p className="text-sm text-bark" role="alert">
-          {error}
-        </p>
-      ) : null}
+      <FormFeedback success={success} error={error} />
       <ul className="space-y-4">
         {posts.map((p) => (
           <li key={p.id}>

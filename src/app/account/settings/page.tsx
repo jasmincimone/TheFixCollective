@@ -1,0 +1,592 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { FormFeedback } from "@/components/ui/FormFeedback";
+import { TWO_FACTOR_METHOD } from "@/lib/twoFactor";
+
+type SettingsState = {
+  email: string;
+  name: string | null;
+  createdAt: string;
+  twoFactorMethod: string;
+  phone: string | null;
+  phoneVerifiedAt: string | null;
+};
+
+function Section({
+  id,
+  title,
+  description,
+  children,
+}: {
+  id: string;
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section aria-labelledby={id} className="space-y-4">
+      <div>
+        <h2 id={id} className="text-base font-semibold text-fix-heading">
+          {title}
+        </h2>
+        {description && <p className="mt-1 text-sm text-fix-text-muted">{description}</p>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+const inputClass =
+  "mt-1 w-full max-w-md rounded-lg border border-fix-border/20 bg-fix-surface px-3 py-2 text-fix-text focus:border-amber focus:outline-none focus:ring-1 focus:ring-amber";
+
+export default function AccountSettingsPage() {
+  const { update: updateSession } = useSession();
+  const [data, setData] = useState<SettingsState | null>(null);
+  const [loadError, setLoadError] = useState("");
+
+  const [nameInput, setNameInput] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [emailPassword, setEmailPassword] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [phoneInput, setPhoneInput] = useState("");
+  const [challengeId, setChallengeId] = useState<string | null>(null);
+  const [verifyCode, setVerifyCode] = useState("");
+
+  const [saving, setSaving] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [removingPhone, setRemovingPhone] = useState(false);
+
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+
+  const [profileMsg, setProfileMsg] = useState("");
+  const [profileErr, setProfileErr] = useState("");
+  const [emailMsg, setEmailMsg] = useState("");
+  const [emailErr, setEmailErr] = useState("");
+  const [passwordMsg, setPasswordMsg] = useState("");
+  const [passwordErr, setPasswordErr] = useState("");
+  const [tfaMsg, setTfaMsg] = useState("");
+  const [tfaErr, setTfaErr] = useState("");
+
+  const load = useCallback(async () => {
+    setLoadError("");
+    const res = await fetch("/api/account/settings");
+    if (!res.ok) {
+      setLoadError("Could not load settings. Try again or sign out and back in.");
+      return;
+    }
+    const j = (await res.json()) as SettingsState;
+    setData(j);
+    setNameInput(j.name || "");
+    setPhoneInput(j.phone || "");
+    setNewEmail("");
+    setEmailPassword("");
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const onSaveName = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProfileErr("");
+    setProfileMsg("");
+    setProfileLoading(true);
+    try {
+      const res = await fetch("/api/account/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: nameInput }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setProfileErr(typeof j.error === "string" ? j.error : "Could not save name.");
+        setProfileLoading(false);
+        return;
+      }
+      setProfileMsg("Saved.");
+      await load();
+      await updateSession?.();
+    } catch {
+      setProfileErr("Something went wrong. Check your connection and try again.");
+    }
+    setProfileLoading(false);
+  };
+
+  const onChangeEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEmailErr("");
+    setEmailMsg("");
+    setEmailLoading(true);
+    try {
+      const res = await fetch("/api/account/email", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          newEmail: newEmail.trim(),
+          currentPassword: emailPassword,
+        }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setEmailErr(typeof j.error === "string" ? j.error : "Could not update email.");
+        setEmailLoading(false);
+        return;
+      }
+      setEmailMsg("Saved. Use your new email next time you sign in.");
+      setNewEmail("");
+      setEmailPassword("");
+      await load();
+      await updateSession?.();
+    } catch {
+      setEmailErr("Something went wrong. Check your connection and try again.");
+    }
+    setEmailLoading(false);
+  };
+
+  const onChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordErr("");
+    setPasswordMsg("");
+    if (newPassword !== confirmPassword) {
+      setPasswordErr("New passwords do not match.");
+      return;
+    }
+    setPasswordLoading(true);
+    try {
+      const res = await fetch("/api/account/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setPasswordErr(typeof j.error === "string" ? j.error : "Could not update password.");
+        setPasswordLoading(false);
+        return;
+      }
+      setPasswordMsg("Saved.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch {
+      setPasswordErr("Something went wrong. Check your connection and try again.");
+    }
+    setPasswordLoading(false);
+  };
+
+  const onSaveMethod = async (twoFactorMethod: string) => {
+    setTfaErr("");
+    setTfaMsg("");
+    setSaving(true);
+    try {
+      const res = await fetch("/api/account/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ twoFactorMethod }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setTfaErr(typeof j.error === "string" ? j.error : "Could not update two-factor settings.");
+        setSaving(false);
+        return;
+      }
+      setTfaMsg("Saved.");
+      await load();
+    } catch {
+      setTfaErr("Something went wrong. Check your connection and try again.");
+    }
+    setSaving(false);
+  };
+
+  const onSendCode = async () => {
+    setTfaErr("");
+    setTfaMsg("");
+    setSending(true);
+    try {
+      const res = await fetch("/api/account/phone/send-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: phoneInput.trim() }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setTfaErr(typeof j.error === "string" ? j.error : "Could not send SMS.");
+        setSending(false);
+        return;
+      }
+      setChallengeId(j.challengeId || null);
+      setVerifyCode("");
+      setTfaMsg("Submitted. Enter the code we texted you below.");
+    } catch {
+      setTfaErr("Something went wrong. Check your connection and try again.");
+    }
+    setSending(false);
+  };
+
+  const onVerify = async () => {
+    if (!challengeId) return;
+    setTfaErr("");
+    setTfaMsg("");
+    setVerifying(true);
+    try {
+      const res = await fetch("/api/account/phone/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ challengeId, code: verifyCode.trim() }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setTfaErr(typeof j.error === "string" ? j.error : "Verification failed.");
+        setVerifying(false);
+        return;
+      }
+      setChallengeId(null);
+      setVerifyCode("");
+      setTfaMsg("Saved. Your phone is verified.");
+      await load();
+    } catch {
+      setTfaErr("Something went wrong. Check your connection and try again.");
+    }
+    setVerifying(false);
+  };
+
+  const onRemovePhone = async () => {
+    if (!window.confirm("Remove this phone number? SMS two-factor will be turned off if it was enabled.")) {
+      return;
+    }
+    setTfaErr("");
+    setTfaMsg("");
+    setRemovingPhone(true);
+    try {
+      const res = await fetch("/api/account/phone/remove", { method: "POST" });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setTfaErr(typeof j.error === "string" ? j.error : "Could not remove phone.");
+        setRemovingPhone(false);
+        return;
+      }
+      setChallengeId(null);
+      setVerifyCode("");
+      setTfaMsg("Saved. Phone number removed.");
+      await load();
+    } catch {
+      setTfaErr("Something went wrong. Check your connection and try again.");
+    }
+    setRemovingPhone(false);
+  };
+
+  const method = data?.twoFactorMethod || TWO_FACTOR_METHOD.NONE;
+  const verified = Boolean(data?.phoneVerifiedAt && data?.phone);
+
+  if (loadError) {
+    return <FormFeedback error={loadError} />;
+  }
+  if (!data) {
+    return <p className="text-sm text-fix-text-muted">Loading…</p>;
+  }
+
+  const created = new Date(data.createdAt);
+  const memberSince = Number.isNaN(created.getTime())
+    ? "—"
+    : created.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+
+  return (
+    <div className="space-y-10">
+      <div>
+        <h2 className="text-lg font-semibold text-fix-heading">Settings</h2>
+        <p className="mt-1 text-sm text-fix-text-muted">
+          Manage your profile, password, and how you sign in—including optional two-factor verification.
+        </p>
+      </div>
+
+      <Section
+        id="account-info-heading"
+        title="Account information"
+        description="Your display name and email used for sign-in and receipts."
+      >
+        <Card className="p-5">
+          <dl className="grid gap-3 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-fix-text-muted">Member since</dt>
+              <dd className="mt-0.5 font-medium text-fix-text">{memberSince}</dd>
+            </div>
+            <div>
+              <dt className="text-fix-text-muted">Sign-in email</dt>
+              <dd className="mt-0.5 break-all font-medium text-fix-text">{data.email}</dd>
+            </div>
+          </dl>
+
+          <form onSubmit={onSaveName} className="mt-6 space-y-3 border-t border-fix-border/15 pt-6">
+            <div>
+              <label htmlFor="profile-name" className="block text-sm font-medium text-fix-text">
+                Display name
+              </label>
+              <input
+                id="profile-name"
+                type="text"
+                autoComplete="name"
+                value={nameInput}
+                onChange={(e) => {
+                  setNameInput(e.target.value);
+                  setProfileMsg("");
+                  setProfileErr("");
+                }}
+                className={inputClass}
+                placeholder="Your name"
+              />
+            </div>
+            <FormFeedback success={profileMsg || null} error={profileErr || null} />
+            <Button type="submit" size="sm" variant="primary" disabled={profileLoading}>
+              {profileLoading ? "Saving…" : "Save name"}
+            </Button>
+          </form>
+
+          <form onSubmit={onChangeEmail} className="mt-6 space-y-3 border-t border-fix-border/15 pt-6">
+            <p className="text-sm text-fix-text-muted">
+              To change your sign-in email, enter the new address and your current password.
+            </p>
+            <div>
+              <label htmlFor="new-email" className="block text-sm font-medium text-fix-text">
+                New email
+              </label>
+              <input
+                id="new-email"
+                type="email"
+                autoComplete="email"
+                value={newEmail}
+                onChange={(e) => {
+                  setNewEmail(e.target.value);
+                  setEmailMsg("");
+                  setEmailErr("");
+                }}
+                className={inputClass}
+                placeholder="new@example.com"
+              />
+            </div>
+            <div>
+              <label htmlFor="email-current-pw" className="block text-sm font-medium text-fix-text">
+                Current password
+              </label>
+              <input
+                id="email-current-pw"
+                type="password"
+                autoComplete="current-password"
+                value={emailPassword}
+                onChange={(e) => {
+                  setEmailPassword(e.target.value);
+                  setEmailMsg("");
+                  setEmailErr("");
+                }}
+                className={inputClass}
+              />
+            </div>
+            <FormFeedback success={emailMsg || null} error={emailErr || null} />
+            <Button type="submit" size="sm" variant="secondary" disabled={emailLoading}>
+              {emailLoading ? "Saving…" : "Update email"}
+            </Button>
+          </form>
+        </Card>
+      </Section>
+
+      <Section
+        id="password-heading"
+        title="Password"
+        description="Use a strong password you don’t reuse on other sites. Forgot your password? Use the link on the sign-in page."
+      >
+        <Card className="p-5">
+          <form onSubmit={onChangePassword} className="max-w-md space-y-3">
+            <div>
+              <label htmlFor="pw-current" className="block text-sm font-medium text-fix-text">
+                Current password
+              </label>
+              <input
+                id="pw-current"
+                type="password"
+                autoComplete="current-password"
+                value={currentPassword}
+                onChange={(e) => {
+                  setCurrentPassword(e.target.value);
+                  setPasswordMsg("");
+                  setPasswordErr("");
+                }}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label htmlFor="pw-new" className="block text-sm font-medium text-fix-text">
+                New password
+              </label>
+              <input
+                id="pw-new"
+                type="password"
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={(e) => {
+                  setNewPassword(e.target.value);
+                  setPasswordMsg("");
+                  setPasswordErr("");
+                }}
+                className={inputClass}
+                minLength={8}
+              />
+              <p className="mt-0.5 text-xs text-fix-text-muted">At least 8 characters</p>
+            </div>
+            <div>
+              <label htmlFor="pw-confirm" className="block text-sm font-medium text-fix-text">
+                Confirm new password
+              </label>
+              <input
+                id="pw-confirm"
+                type="password"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  setPasswordMsg("");
+                  setPasswordErr("");
+                }}
+                className={inputClass}
+                minLength={8}
+              />
+            </div>
+            <FormFeedback success={passwordMsg || null} error={passwordErr || null} />
+            <Button type="submit" size="sm" variant="primary" disabled={passwordLoading}>
+              {passwordLoading ? "Saving…" : "Update password"}
+            </Button>
+          </form>
+        </Card>
+      </Section>
+
+      <Section
+        id="two-factor-heading"
+        title="Two-factor authentication"
+        description="Add a second step after your password: a code by email or SMS. Choose None to turn it off or start over."
+      >
+        <Card className="p-5">
+          <h3 className="text-sm font-semibold text-fix-heading">Sign-in method</h3>
+          <p className="mt-2 text-sm text-fix-text-muted">
+            After your password, we&apos;ll ask for a one-time code. <strong>None</strong> resets two-factor to
+            password-only sign-in.
+          </p>
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            <Button
+              type="button"
+              size="sm"
+              variant={method === TWO_FACTOR_METHOD.NONE ? "primary" : "secondary"}
+              disabled={saving}
+              onClick={() => void onSaveMethod(TWO_FACTOR_METHOD.NONE)}
+            >
+              None
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={method === TWO_FACTOR_METHOD.EMAIL ? "primary" : "secondary"}
+              disabled={saving}
+              onClick={() => void onSaveMethod(TWO_FACTOR_METHOD.EMAIL)}
+            >
+              Email code
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={method === TWO_FACTOR_METHOD.SMS ? "primary" : "secondary"}
+              disabled={saving || !verified}
+              onClick={() => void onSaveMethod(TWO_FACTOR_METHOD.SMS)}
+              title={!verified ? "Verify a phone number first" : undefined}
+            >
+              SMS code
+            </Button>
+          </div>
+          {!verified && method === TWO_FACTOR_METHOD.SMS && (
+            <p className="mt-2 text-xs text-bark">Verify your phone below before SMS two-factor can stay enabled.</p>
+          )}
+        </Card>
+
+        <Card className="p-5">
+          <h3 className="text-sm font-semibold text-fix-heading">Phone number (for SMS)</h3>
+          <p className="mt-2 text-sm text-fix-text-muted">
+            International format (E.164), e.g. +15551234567. We text a code to verify before SMS sign-in works.
+          </p>
+          <div className="mt-4 space-y-3">
+            <div>
+              <label htmlFor="settings-phone" className="block text-sm font-medium text-fix-text">
+                Phone number
+              </label>
+              <input
+                id="settings-phone"
+                type="tel"
+                autoComplete="tel"
+                value={phoneInput}
+                onChange={(e) => {
+                  setPhoneInput(e.target.value);
+                  setTfaMsg("");
+                  setTfaErr("");
+                }}
+                placeholder="+15551234567"
+                className={inputClass}
+              />
+            </div>
+            {data.phoneVerifiedAt && data.phone && (
+              <p className="text-xs text-fix-text-muted">Verified: {data.phone}</p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" size="sm" variant="secondary" disabled={sending} onClick={() => void onSendCode()}>
+                {sending ? "Sending…" : "Send verification code"}
+              </Button>
+              {(data.phone || data.phoneVerifiedAt) && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  disabled={removingPhone}
+                  onClick={() => void onRemovePhone()}
+                >
+                  {removingPhone ? "Removing…" : "Remove phone"}
+                </Button>
+              )}
+            </div>
+            {challengeId && (
+              <div className="flex max-w-md flex-col gap-2 sm:flex-row sm:items-end">
+                <div className="flex-1">
+                  <label htmlFor="phone-code" className="block text-xs font-medium text-fix-text">
+                    Code from SMS
+                  </label>
+                  <input
+                    id="phone-code"
+                    type="text"
+                    inputMode="numeric"
+                    value={verifyCode}
+                    onChange={(e) => {
+                      setVerifyCode(e.target.value);
+                      setTfaMsg("");
+                      setTfaErr("");
+                    }}
+                    className={inputClass}
+                    placeholder="6-digit code"
+                  />
+                </div>
+                <Button type="button" size="sm" variant="primary" disabled={verifying} onClick={() => void onVerify()}>
+                  {verifying ? "Verifying…" : "Verify phone"}
+                </Button>
+              </div>
+            )}
+          </div>
+        </Card>
+
+        <FormFeedback success={tfaMsg || null} error={tfaErr || null} />
+      </Section>
+    </div>
+  );
+}

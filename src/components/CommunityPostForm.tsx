@@ -7,12 +7,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { FormFeedback } from "@/components/ui/FormFeedback";
 
 export function CommunityPostForm() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [content, setContent] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   if (status === "loading") {
@@ -65,13 +67,17 @@ export function CommunityPostForm() {
         with you from your post—only your display name and post appear here, not your email.
       </p>
       <form onSubmit={submit} className="mt-4 space-y-3">
-        {error && <p className="text-sm text-bark">{error}</p>}
+        <FormFeedback success={success} error={error} />
         <textarea
           required
           rows={4}
           maxLength={8000}
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={(e) => {
+            setContent(e.target.value);
+            setSuccess(null);
+            setError(null);
+          }}
           placeholder="Share an update, question, or win…"
           className="w-full rounded-xl border border-fix-border/20 bg-fix-surface px-3 py-2 text-sm text-fix-text placeholder:text-fix-text-muted/70"
         />

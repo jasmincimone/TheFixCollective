@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 import { Button, ButtonLink } from "@/components/ui/Button";
+import { FormFeedback } from "@/components/ui/FormFeedback";
 import { cn } from "@/lib/cn";
 
 type ThreadSummary = {
@@ -91,6 +92,7 @@ export function VendorMessenger({
   const [sendLoading, setSendLoading] = useState(false);
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [sendSuccess, setSendSuccess] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const handledConversationKey = useRef<string | null>(null);
 
@@ -257,10 +259,12 @@ export function VendorMessenger({
         error?: string;
       };
       if (!res.ok) {
-        setError(data.error || "Could not send.");
+        setError(typeof data.error === "string" ? data.error : "Could not send.");
         setInput(text);
         return;
       }
+      setSendSuccess("Sent.");
+      window.setTimeout(() => setSendSuccess(null), 4000);
       void refreshThreads();
       await loadThread(threadId);
     } finally {
@@ -519,6 +523,7 @@ export function VendorMessenger({
               void send();
             }}
           >
+            <FormFeedback className="mb-2 px-0" success={sendSuccess} />
             <div className="flex gap-2">
               <label htmlFor="dm-input" className="sr-only">
                 Message
@@ -527,7 +532,10 @@ export function VendorMessenger({
                 id="dm-input"
                 rows={2}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  setSendSuccess(null);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();

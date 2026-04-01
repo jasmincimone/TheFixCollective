@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { VendorListingImageField } from "@/components/VendorListingImageField";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { FormFeedback } from "@/components/ui/FormFeedback";
 import { LISTING_STATUS } from "@/lib/roles";
 
 export default function EditVendorListingPage() {
@@ -21,6 +22,7 @@ export default function EditVendorListingPage() {
   const [productUrl, setProductUrl] = useState("");
   const [status, setStatus] = useState<string>(LISTING_STATUS.DRAFT);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -78,15 +80,18 @@ export default function EditVendorListingPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error || "Failed");
+        setError(typeof data.error === "string" ? data.error : "Failed to save listing.");
         setSaving(false);
         return;
       }
-      router.push("/account/vendor/listings");
-      router.refresh();
+      setSuccess("Saved.");
+      setSaving(false);
+      window.setTimeout(() => {
+        router.push("/account/vendor/listings");
+        router.refresh();
+      }, 700);
     } catch {
-      setError("Something went wrong");
-    } finally {
+      setError("Something went wrong. Check your connection and try again.");
       setSaving(false);
     }
   }
@@ -100,7 +105,7 @@ export default function EditVendorListingPage() {
       <h2 className="text-lg font-semibold text-fix-heading">Edit listing</h2>
       <Card className="p-6">
         <form onSubmit={submit} className="space-y-4">
-          {error && <p className="text-sm text-bark">{error}</p>}
+          <FormFeedback success={success} error={error} />
           <div>
             <label className="block text-sm font-medium text-fix-text">Title *</label>
             <input
@@ -193,7 +198,7 @@ export default function EditVendorListingPage() {
               <option value={LISTING_STATUS.ARCHIVED}>Archived</option>
             </select>
           </div>
-          <Button type="submit" disabled={saving} variant="cta" size="sm">
+          <Button type="submit" disabled={saving || !!success} variant="cta" size="sm">
             {saving ? "Saving…" : "Save changes"}
           </Button>
         </form>

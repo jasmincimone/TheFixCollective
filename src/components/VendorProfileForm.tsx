@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { FormFeedback } from "@/components/ui/FormFeedback";
 
 type Profile = {
   displayName: string;
@@ -33,10 +34,13 @@ export function VendorProfileForm({ initial }: { initial: Profile }) {
   const [geocoding, setGeocoding] = useState(false);
   const [geocodeHint, setGeocodeHint] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  const [geoSuccess, setGeoSuccess] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   async function handleGeocodeLookup() {
     setError(null);
+    setGeoSuccess(null);
     setGeocodeHint(null);
     setGeocoding(true);
     try {
@@ -47,7 +51,7 @@ export function VendorProfileForm({ initial }: { initial: Profile }) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(typeof data.error === "string" ? data.error : "Lookup failed");
+        setError(typeof data.error === "string" ? data.error : "Lookup failed.");
         return;
       }
       if (typeof data.latitude === "number" && typeof data.longitude === "number") {
@@ -58,9 +62,10 @@ export function VendorProfileForm({ initial }: { initial: Profile }) {
             ? `Approximate location: ${data.label}`
             : "Coordinates filled in below — save your profile to use them on the map."
         );
+        setGeoSuccess("Submitted. Coordinates are filled in below — save your profile to keep them.");
       }
     } catch {
-      setError("Lookup failed");
+      setError("Lookup failed. Check your connection and try again.");
     } finally {
       setGeocoding(false);
     }
@@ -69,6 +74,7 @@ export function VendorProfileForm({ initial }: { initial: Profile }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setSaveSuccess(null);
     setSaving(true);
     try {
       const res = await fetch("/api/vendor/profile", {
@@ -86,13 +92,14 @@ export function VendorProfileForm({ initial }: { initial: Profile }) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error || "Save failed");
+        setError(typeof data.error === "string" ? data.error : "Save failed.");
         setSaving(false);
         return;
       }
+      setSaveSuccess("Saved.");
       router.refresh();
     } catch {
-      setError("Something went wrong");
+      setError("Something went wrong. Check your connection and try again.");
     } finally {
       setSaving(false);
     }
@@ -100,7 +107,7 @@ export function VendorProfileForm({ initial }: { initial: Profile }) {
 
   return (
     <form onSubmit={handleSubmit} className="max-w-lg space-y-4">
-      {error && <p className="text-sm text-bark">{error}</p>}
+      <FormFeedback success={saveSuccess} error={error} />
       <div>
         <label htmlFor="displayName" className="block text-sm font-medium text-fix-text">
           Display name
@@ -209,6 +216,7 @@ export function VendorProfileForm({ initial }: { initial: Profile }) {
             {geocoding ? "Looking up…" : "Look up coordinates"}
           </Button>
         </div>
+        <FormFeedback className="mt-2" success={geoSuccess} />
         {geocodeHint ? (
           <p className="mt-2 text-xs text-fix-text-muted">{geocodeHint}</p>
         ) : null}

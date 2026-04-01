@@ -45,23 +45,31 @@ const prisma = new PrismaClient({
 });
 
 try {
-  const email = emailArg.trim();
-  const rows = await prisma.$queryRaw`
-    SELECT id, email, role FROM User WHERE lower(email) = lower(${email})
-  `;
-  if (!rows?.length) {
+  const raw = emailArg.trim();
+  const emailNorm = raw.toLowerCase();
+  const select = { id: true, email: true, role: true };
+  let user = await prisma.user.findUnique({
+    where: { email: emailNorm },
+    select,
+  });
+  if (!user) {
+    user = await prisma.user.findFirst({
+      where: { email: { equals: raw, mode: "insensitive" } },
+      select,
+    });
+  }
+  if (!user) {
     const any = await prisma.user.findMany({ select: { email: true, role: true }, take: 30 });
-    console.error(`No user found with email matching "${email}" (case-insensitive).`);
+    console.error(`No user found with email matching "${raw}" (case-insensitive).`);
     if (any.length) console.error("Users in DB:", any);
     else console.error("User table is empty for this database.");
     process.exit(1);
   }
-  const row = rows[0];
   await prisma.user.update({
-    where: { id: row.id },
+    where: { id: user.id },
     data: { role },
   });
-  console.log(`Updated ${row.email}: ${row.role} → ${role}`);
+  console.log(`Updated ${user.email}: ${user.role} → ${role}`);
 } finally {
   await prisma.$disconnect();
 }

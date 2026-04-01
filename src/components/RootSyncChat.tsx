@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { FormFeedback } from "@/components/ui/FormFeedback";
 import { cn } from "@/lib/cn";
 
 type Msg = { role: "user" | "assistant"; content: string };
@@ -50,6 +51,7 @@ export function RootSyncChat() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sendSuccess, setSendSuccess] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const sortedConversations = useMemo(() => {
@@ -128,6 +130,7 @@ export function RootSyncChat() {
     if (!text || loading) return;
 
     setError(null);
+    setSendSuccess(null);
     setInput("");
 
     if (signedIn) {
@@ -148,13 +151,13 @@ export function RootSyncChat() {
           error?: string;
         };
         if (!res.ok) {
-          setError(data.error || "Request failed.");
+          setError(typeof data.error === "string" ? data.error : "Request failed.");
           setMessages((prev) => prev.slice(0, -1));
           setInput(text);
           return;
         }
         if (!data.message) {
-          setError("Empty response.");
+          setError("Empty response from the assistant. Try again.");
           setMessages((prev) => prev.slice(0, -1));
           setInput(text);
           return;
@@ -162,6 +165,8 @@ export function RootSyncChat() {
         if (data.conversationId) {
           setConversationId(data.conversationId);
         }
+        setSendSuccess("Submitted.");
+        window.setTimeout(() => setSendSuccess(null), 4000);
         setMessages((prev) => [...prev, { role: "assistant", content: data.message! }]);
         void refreshConversations();
       } catch {
@@ -186,17 +191,19 @@ export function RootSyncChat() {
       });
       const data = (await res.json().catch(() => ({}))) as { message?: string; error?: string };
       if (!res.ok) {
-        setError(data.error || "Request failed.");
+        setError(typeof data.error === "string" ? data.error : "Request failed.");
         setMessages((prev) => prev.slice(0, -1));
         setInput(text);
         return;
       }
       if (!data.message) {
-        setError("Empty response.");
+        setError("Empty response from the assistant. Try again.");
         setMessages((prev) => prev.slice(0, -1));
         setInput(text);
         return;
       }
+      setSendSuccess("Submitted.");
+      window.setTimeout(() => setSendSuccess(null), 4000);
       setMessages([...next, { role: "assistant", content: data.message }]);
     } catch {
       setError("Network error. Try again.");
@@ -289,6 +296,7 @@ export function RootSyncChat() {
           void send();
         }}
       >
+        <FormFeedback className="mb-2" success={sendSuccess} />
         <div className="flex gap-2">
           <label htmlFor="rootsync-input" className="sr-only">
             Message to RootSync
@@ -297,7 +305,10 @@ export function RootSyncChat() {
             id="rootsync-input"
             rows={2}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              setSendSuccess(null);
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();

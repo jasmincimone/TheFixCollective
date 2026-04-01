@@ -8,6 +8,11 @@ import Link from "next/link";
 import { Container } from "@/components/Container";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { FormFeedback } from "@/components/ui/FormFeedback";
+
+type PrepareOk =
+  | { skipTwoFactor: true }
+  | { needsTwoFactor: true; challengeId: string; channel: "EMAIL" | "SMS" };
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,12 +21,14 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState<"password" | "otp">("password");
+  const [challengeId, setChallengeId] = useState<string | null>(null);
+  const [otpChannel, setOtpChannel] = useState<"EMAIL" | "SMS" | null>(null);
+  const [code, setCode] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+  const finishSignIn = async () => {
     const res = await signIn("credentials", {
       email: email.trim(),
       password,
@@ -32,9 +39,78 @@ export default function LoginPage() {
       setError("Invalid email or password.");
       return;
     }
-    router.push(callbackUrl);
-    router.refresh();
+    setSuccessMsg("Signed in successfully.");
+    window.setTimeout(() => {
+      router.push(callbackUrl);
+      router.refresh();
+    }, 500);
   };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccessMsg("");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/login-prepare", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+      const data = (await res.json().catch(() => ({}))) as PrepareOk & { error?: string };
+      if (!res.ok) {
+        setError(
+          typeof data.error === "string" ? data.error : "Invalid email or password."
+        );
+        setLoading(false);
+        return;
+      }
+      if ("skipTwoFactor" in data && data.skipTwoFactor) {
+        await finishSignIn();
+        return;
+      }
+      if ("needsTwoFactor" in data && data.needsTwoFactor && data.challengeId) {
+        setChallengeId(data.challengeId);
+        setOtpChannel(data.channel);
+        setStep("otp");
+        setCode("");
+        setLoading(false);
+        return;
+      }
+      setError("Unexpected response from server.");
+    } catch {
+      setError("Something went wrong. Check your connection and try again.");
+    }
+    setLoading(false);
+  };
+
+  const handleOtpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!challengeId) return;
+    setError("");
+    setSuccessMsg("");
+    setLoading(true);
+    const res = await signIn("credentials-2fa", {
+      challengeId,
+      code: code.trim(),
+      redirect: false,
+    });
+    setLoading(false);
+    if (res?.error) {
+      setError("Invalid or expired code.");
+      return;
+    }
+    setSuccessMsg("Signed in successfully.");
+    window.setTimeout(() => {
+      router.push(callbackUrl);
+      router.refresh();
+    }, 500);
+  };
+
+  const otpHint =
+    otpChannel === "SMS"
+      ? "Enter the code we texted to your phone."
+      : "Enter the code we emailed you.";
 
   return (
     <Container className="py-12 sm:py-16">
@@ -44,38 +120,89 @@ export default function LoginPage() {
           Access your order history and downloads.
         </p>
         <Card className="mt-6 p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="login-email" className="block text-sm font-medium text-fix-text">
-                Email
-              </label>
-              <input
-                id="login-email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-fix-border/20 bg-fix-surface px-3 py-2 text-fix-text focus:border-amber focus:outline-none focus:ring-1 focus:ring-amber"
-              />
-            </div>
-            <div>
-              <label htmlFor="login-password" className="block text-sm font-medium text-fix-text">
-                Password
-              </label>
-              <input
-                id="login-password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-fix-border/20 bg-fix-surface px-3 py-2 text-fix-text focus:border-amber focus:outline-none focus:ring-1 focus:ring-amber"
-              />
-            </div>
-            {error && <p className="text-sm text-bark">{error}</p>}
-            <Button type="submit" disabled={loading} className="w-full" variant="primary">
-              {loading ? "Signing in…" : "Sign in"}
-            </Button>
-          </form>
+          <FormFeedback success={successMsg || null} />
+          {step === "password" ? (
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="login-email" className="block text-sm font-medium text-fix-text">
+                  Email
+                </label>
+                <input
+                  id="login-email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-fix-border/20 bg-fix-surface px-3 py-2 text-fix-text focus:border-amber focus:outline-none focus:ring-1 focus:ring-amber"
+                />
+              </div>
+              <div>
+                <label htmlFor="login-password" className="block text-sm font-medium text-fix-text">
+                  Password
+                </label>
+                <input
+                  id="login-password"
+                  type="password"
+                  required
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-fix-border/20 bg-fix-surface px-3 py-2 text-fix-text focus:border-amber focus:outline-none focus:ring-1 focus:ring-amber"
+                />
+                <p className="mt-1 text-right text-xs">
+                  <Link href="/forgot-password" className="text-fix-link hover:text-fix-link-hover">
+                    Forgot password?
+                  </Link>
+                </p>
+              </div>
+              <FormFeedback error={error || null} />
+              <Button type="submit" disabled={loading || !!successMsg} className="w-full" variant="primary">
+                {loading ? "Signing in…" : "Sign in"}
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleOtpSubmit} className="space-y-4">
+              <p className="text-sm text-fix-text-muted">{otpHint}</p>
+              <div>
+                <label htmlFor="login-otp" className="block text-sm font-medium text-fix-text">
+                  Verification code
+                </label>
+                <input
+                  id="login-otp"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  required
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-fix-border/20 bg-fix-surface px-3 py-2 text-fix-text focus:border-amber focus:outline-none focus:ring-1 focus:ring-amber"
+                  placeholder="6-digit code"
+                />
+              </div>
+              <FormFeedback error={error || null} />
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="w-full sm:w-auto"
+                  disabled={loading || !!successMsg}
+                  onClick={() => {
+                    setStep("password");
+                    setChallengeId(null);
+                    setOtpChannel(null);
+                    setCode("");
+                    setError("");
+                  }}
+                >
+                  Back
+                </Button>
+                <Button type="submit" disabled={loading || !!successMsg} className="w-full flex-1" variant="primary">
+                  {loading ? "Verifying…" : "Verify and sign in"}
+                </Button>
+              </div>
+            </form>
+          )}
           <p className="mt-4 text-center text-sm text-fix-text-muted">
             Don&apos;t have an account?{" "}
             <Link href="/signup" className="text-fix-link hover:text-fix-link-hover">

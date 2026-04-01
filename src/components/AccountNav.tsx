@@ -24,6 +24,7 @@ export function AccountNav() {
 
   const items: Array<{ href: string; label: string; show: boolean }> = [
     { href: "/account", label: "Overview", show: true },
+    { href: "/account/settings", label: "Settings", show: true },
     { href: "/account/orders", label: "Order history", show: true },
     { href: "/account/community", label: "Community", show: true },
     { href: "/messages", label: "Messages", show: true },

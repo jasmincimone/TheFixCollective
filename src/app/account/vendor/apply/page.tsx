@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { FormFeedback } from "@/components/ui/FormFeedback";
 
 export default function VendorApplyPage() {
   const router = useRouter();
@@ -13,11 +14,13 @@ export default function VendorApplyPage() {
   const [contactEmail, setContactEmail] = useState("");
   const [pickupLocation, setPickupLocation] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
     setSubmitting(true);
     try {
       const res = await fetch("/api/vendor/apply", {
@@ -27,15 +30,18 @@ export default function VendorApplyPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error || "Could not submit");
+        setError(typeof data.error === "string" ? data.error : "Could not submit.");
         setSubmitting(false);
         return;
       }
-      router.push("/account/vendor");
-      router.refresh();
+      setSuccess("Submitted.");
+      setSubmitting(false);
+      window.setTimeout(() => {
+        router.push("/account/vendor");
+        router.refresh();
+      }, 800);
     } catch {
-      setError("Something went wrong");
-    } finally {
+      setError("Something went wrong. Check your connection and try again.");
       setSubmitting(false);
     }
   }
@@ -51,7 +57,7 @@ export default function VendorApplyPage() {
 
       <Card className="p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && <p className="text-sm text-bark">{error}</p>}
+          <FormFeedback success={success} error={error} />
           <div>
             <label htmlFor="displayName" className="block text-sm font-medium text-fix-text">
               Business / display name *
@@ -99,7 +105,7 @@ export default function VendorApplyPage() {
               className="mt-1 w-full rounded-lg border border-fix-border/20 bg-fix-surface px-3 py-2 text-fix-text"
             />
           </div>
-          <Button type="submit" disabled={submitting} variant="cta" className="w-full sm:w-auto">
+          <Button type="submit" disabled={submitting || !!success} variant="cta" className="w-full sm:w-auto">
             {submitting ? "Submitting…" : "Submit application"}
           </Button>
         </form>

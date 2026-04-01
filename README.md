@@ -44,9 +44,11 @@ The app uses **Stripe** for payments and **NextAuth** for accounts.
 
 2. Run migrations: `npm run db:migrate` (creates/updates tables; requires `DATABASE_URL`).
 
-3. Create an account at `/signup`, then sign in at `/login`. Order history and digital downloads are under **Account** (header) → **Order history**.
+3. **Email (Resend)** — required for **forgot password** and **email two-factor** to actually send mail. See [Email with Resend](#email-with-resend) below. Without `RESEND_API_KEY` + `EMAIL_FROM`, dev still works but reset links are only logged in the terminal.
 
-4. **Roles (admin / vendor / customer)**  
+4. Create an account at `/signup`, then sign in at `/login`. Order history and digital downloads are under **Account** (header) → **Order history**.
+
+5. **Roles (admin / vendor / customer)**  
    - New signups are **customers** by default.  
    - **First admin:** after creating your account, promote your user:  
      `npm run db:set-user-role -- you@example.com ADMIN`  
@@ -54,7 +56,7 @@ The app uses **Stripe** for payments and **NextAuth** for accounts.
    - **Vendors:** customers can apply at **Account → Become a vendor**. An admin approves under **Account → Admin → Vendor requests**. Approved vendors get marketplace listing tools and a **Vendor** badge in **Community** (when posting).  
    - Admins can change roles under **Account → Admin → Users & roles**.
 
-5. Digital downloads: add files to `public/downloads/{productId}.pdf` (or other format). The download API serves them to customers who have paid for that item.
+6. Digital downloads: add files to `public/downloads/{productId}.pdf` (or other format). The download API serves them to customers who have paid for that item.
 
 ## Stripe Payment Links (simple checkout)
 

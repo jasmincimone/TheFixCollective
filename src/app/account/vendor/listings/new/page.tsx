@@ -6,6 +6,7 @@ import { useState } from "react";
 import { VendorListingImageField } from "@/components/VendorListingImageField";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { FormFeedback } from "@/components/ui/FormFeedback";
 import { LISTING_STATUS } from "@/lib/roles";
 
 export default function NewVendorListingPage() {
@@ -19,11 +20,13 @@ export default function NewVendorListingPage() {
   const [productUrl, setProductUrl] = useState("");
   const [status, setStatus] = useState<string>(LISTING_STATUS.DRAFT);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
     const cents = Math.round(parseFloat(priceDollars || "0") * 100);
     if (!title.trim() || !description.trim() || cents < 0 || Number.isNaN(cents)) {
       setError("Check title, description, and price.");
@@ -47,15 +50,18 @@ export default function NewVendorListingPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error || "Failed");
+        setError(typeof data.error === "string" ? data.error : "Failed to create listing.");
         setSaving(false);
         return;
       }
-      router.push("/account/vendor/listings");
-      router.refresh();
+      setSuccess("Saved.");
+      setSaving(false);
+      window.setTimeout(() => {
+        router.push("/account/vendor/listings");
+        router.refresh();
+      }, 700);
     } catch {
-      setError("Something went wrong");
-    } finally {
+      setError("Something went wrong. Check your connection and try again.");
       setSaving(false);
     }
   }
@@ -65,7 +71,7 @@ export default function NewVendorListingPage() {
       <h2 className="text-lg font-semibold text-fix-heading">New listing</h2>
       <Card className="p-6">
         <form onSubmit={submit} className="space-y-4">
-          {error && <p className="text-sm text-bark">{error}</p>}
+          <FormFeedback success={success} error={error} />
           <div>
             <label className="block text-sm font-medium text-fix-text">Title *</label>
             <input
@@ -158,7 +164,7 @@ export default function NewVendorListingPage() {
               <option value={LISTING_STATUS.ARCHIVED}>Archived</option>
             </select>
           </div>
-          <Button type="submit" disabled={saving} variant="cta" size="sm">
+          <Button type="submit" disabled={saving || !!success} variant="cta" size="sm">
             {saving ? "Saving…" : "Create listing"}
           </Button>
         </form>
