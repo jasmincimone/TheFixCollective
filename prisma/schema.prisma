@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// SQLite: store as strings; use src/lib/roles.ts for constants
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String?
+  name         String?
+  role         String   @default("CUSTOMER") // ADMIN | VENDOR | CUSTOMER
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  orders       Order[]
+  vendorProfile VendorProfile?
+  communityPosts CommunityPost[]
+  rootSyncConversations RootSyncConversation[]
+  directThreadsAsLow  DirectThread[] @relation("DirectThreadLow")
+  directThreadsAsHigh DirectThread[] @relation("DirectThreadHigh")
+  directMessages        DirectMessage[]
+}
+
+/// Direct messages between two users. participantLowId is always lexicographically before participantHighId.
+model DirectThread {
+  id                 String    @id @default(cuid())
+  participantLowId   String
+  participantLow     User      @relation("DirectThreadLow", fields: [participantLowId], references: [id], onDelete: Cascade)
+  participantHighId  String
+  participantHigh    User      @relation("DirectThreadHigh", fields: [participantHighId], references: [id], onDelete: Cascade)
+  lastMessageAt      DateTime?
+  participantLowLastReadAt  DateTime?
+  participantHighLastReadAt DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  messages           DirectMessage[]
+
+  @@unique([participantLowId, participantHighId])
+  @@index([participantLowId])
+  @@index([participantHighId])
+  @@index([lastMessageAt])
+}
+
+model DirectMessage {
+  id        String       @id @default(cuid())
+  threadId  String
+  thread    DirectThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime     @default(now())
+
+  @@index([threadId, createdAt])
+}
+
+model RootSyncConversation {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  messages  RootSyncMessage[]
+
+  @@index([userId])
+  @@index([userId, updatedAt])
+}
+
+model RootSyncMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  conversation   RootSyncConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String
+  content        String
+  createdAt      DateTime @default(now())
+
+  @@index([conversationId])
+}
+
+model VendorProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName     String
+  bio             String?
+  contactEmail    String?
+  pickupLocation  String?
+  /// Public website (https), shown on marketplace
+  website         String?
+  /// WGS84 — set in vendor profile for map pin (optional)
+  latitude        Float?
+  longitude       Float?
+  status          String   @default("PENDING") // PENDING | APPROVED | REJECTED | SUSPENDED
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  listings        MarketplaceListing[]
+}
+
+model MarketplaceListing {
+  id                String   @id @default(cuid())
+  vendorProfileId   String
+  vendorProfile     VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  title             String
+  description       String
+  priceCents        Int
+  category          String?
+  imageUrl          String?
+  /// Optional checkout link (e.g. Stripe Payment Link) — vendor-provided
+  paymentUrl        String?
+  /// Optional product/catalog page when no payment link (or in addition)
+  productUrl        String?
+  status            String   @default("DRAFT") // DRAFT | PUBLISHED | ARCHIVED
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  orderItems        OrderItem[]
+
+  @@index([vendorProfileId])
+  @@index([status])
+}
+
+model CommunityPost {
+  id               String   @id @default(cuid())
+  authorId         String
+  author           User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content          String
+  roleAtPost       String
+  showVendorBadge  Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  /// Set when content is edited; used for “Edited” label and sorting with `updatedAt`.
+  editedAt         DateTime?
+
+  @@index([authorId])
+  @@index([createdAt])
+  @@index([updatedAt])
+}
+
+model Order {
+  id                  String    @id @default(cuid())
+  userId              String?
+  email               String
+  status              String
+  stripeSessionId     String?   @unique
+  stripePaymentIntent String?
+  subtotalCents       Int
+  shippingCents       Int       @default(0)
+  totalCents          Int
+  shippingName        String?
+  shippingLine1       String?
+  shippingLine2       String?
+  shippingCity        String?
+  shippingState       String?
+  shippingPostal      String?
+  shippingCountry     String?
+  trackingCarrier     String?
+  trackingNumber      String?
+  shippedAt           DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  user                User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items               OrderItem[]
+
+  @@index([userId])
+  @@index([email])
+  @@index([stripeSessionId])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id                   String   @id @default(cuid())
+  orderId              String
+  productId            String
+  name                 String
+  quantity             Int
+  priceCents           Int
+  type                 String
+  format               String?
+  downloadKey          String?
+  listingId            String?
+  marketplaceListing   MarketplaceListing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  order                Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([listingId])
+}

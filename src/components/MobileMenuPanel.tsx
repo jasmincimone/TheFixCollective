@@ -1,0 +1,89 @@
+"use client";
+
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+
+import { MenuAccountLink } from "@/components/MenuAccountLink";
+
+const PLATFORM_NAV = [
+  { href: "/marketplace", label: "Marketplace" },
+  { href: "/rootsync", label: "RootSync" },
+  { href: "/messages", label: "Messages" },
+  { href: "/community", label: "Community" },
+  { href: "/courses", label: "Courses" },
+  { href: "/downloads", label: "Downloads" },
+];
+
+type Props = { onClose: () => void; closeHref?: string };
+
+export function MobileMenuPanel({ onClose, closeHref }: Props) {
+  return (
+    <aside className="flex h-full w-1/4 min-w-[280px] max-w-[400px] flex-col border-r border-fix-border/15 bg-fix-surface">
+      <div className="flex flex-1 flex-col overflow-y-auto py-6 pl-6 pr-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-fix-heading">Menu</h2>
+          {closeHref ? (
+            <Link
+              href={closeHref}
+              className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-fix-text-muted hover:bg-fix-bg-muted hover:text-fix-heading"
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden />
+              Close
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-fix-text-muted hover:bg-fix-bg-muted hover:text-fix-heading"
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden />
+              Close
+            </button>
+          )}
+        </div>
+
+        <nav className="mt-6 flex-1" aria-label="Main navigation">
+          <section className="mb-6">
+            <MenuAccountLink onNavigate={onClose} />
+          </section>
+
+          <section className="mb-6">
+            <Link
+              href="/"
+              onClick={onClose}
+              className="block rounded-xl border border-fix-border/15 bg-fix-bg-muted px-3 py-2.5 text-sm font-semibold text-fix-heading hover:bg-fix-bg-muted/80"
+            >
+              Home
+            </Link>
+            <Link
+              href="/shops"
+              onClick={onClose}
+              className="mt-2 block rounded-xl border border-fix-border/15 bg-fix-surface px-3 py-2.5 text-sm font-semibold text-fix-heading hover:bg-fix-bg-muted"
+            >
+              The Fix Shops
+            </Link>
+          </section>
+
+          <section className="mb-6">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-fix-text-muted">
+              Platform
+            </h3>
+            <ul className="mt-2 grid gap-0.5">
+              {PLATFORM_NAV.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    onClick={onClose}
+                    className="block rounded-xl px-3 py-2 text-sm font-medium text-fix-link hover:bg-fix-bg-muted hover:text-fix-link-hover"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </nav>
+      </div>
+    </aside>
+  );
+}

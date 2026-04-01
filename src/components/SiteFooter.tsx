@@ -1,0 +1,78 @@
+import Link from "next/link";
+
+import { Container } from "@/components/Container";
+import { SHOPS } from "@/config/shops";
+
+export function SiteFooter() {
+  return (
+    <footer className="border-t border-fix-border/15 bg-fix-bg-muted">
+      <Container className="py-10">
+        <div className="grid gap-10 md:grid-cols-3">
+          <div>
+            <div className="text-sm font-semibold text-fix-heading">
+              The Fix Collective
+            </div>
+            <p className="mt-2 text-sm text-fix-text-muted">
+              A modern collective for growing, caring, making, and staying ready.
+            </p>
+          </div>
+
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-fix-text-muted">
+              Shops
+            </div>
+            <div className="mt-3 grid gap-2">
+              {SHOPS.map((shop) => (
+                <Link
+                  key={shop.slug}
+                  href={`/shops/${shop.slug}`}
+                  className="text-sm text-fix-link hover:text-fix-link-hover"
+                >
+                  {shop.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-fix-text-muted">
+              Platform
+            </div>
+            <div className="mt-3 grid gap-2">
+              <Link
+                href="/community"
+                className="text-sm text-fix-link hover:text-fix-link-hover"
+              >
+                Community
+              </Link>
+              <Link
+                href="/marketplace"
+                className="text-sm text-fix-link hover:text-fix-link-hover"
+              >
+                Farmer marketplace
+              </Link>
+              <Link
+                href="/rootsync"
+                className="text-sm text-fix-link hover:text-fix-link-hover"
+              >
+                RootSync (AI assistant)
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-10 flex flex-col gap-2 border-t border-fix-border/15 pt-6 text-xs text-fix-text-muted sm:flex-row sm:items-center sm:justify-between">
+          <div>© {new Date().getFullYear()} The Fix Collective</div>
+          <div className="flex gap-4">
+            <Link href="/privacy" className="hover:text-fix-heading">
+              Privacy
+            </Link>
+            <Link href="/terms" className="hover:text-fix-heading">
+              Terms
+            </Link>
+          </div>
+        </div>
+      </Container>
+    </footer>
+  );
+}

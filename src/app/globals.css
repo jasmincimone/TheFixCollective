@@ -1,0 +1,74 @@
+/* Leaflet in a low-priority cascade layer so it never overrides Tailwind utilities.
+   (Dynamic JS imports of this file were unlayered and stuck after SPA navigation.) */
+@layer leaflet, base, components, utilities;
+
+@import "leaflet/dist/leaflet.css" layer(leaflet);
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── The Fix Collective design tokens (raw) ─── */
+:root {
+  --clay: #e1cec3;
+  --espresso: #342a0f;
+  --bark: #59281d;
+  --gold: #b8895f;
+  --forest: #044730;
+  --amber: #e59a28;
+
+  /* Slightly darker clay for muted backgrounds */
+  --clay-muted: #d4bcae;
+  /* Subtle tint for surfaces/cards */
+  --surface-tint: #e8ded6;
+
+  /* Semantic tokens */
+  --bg: var(--clay);
+  --bg-muted: var(--clay-muted);
+  --surface: var(--surface-tint);
+  --text: var(--espresso);
+  --text-muted: var(--bark);
+  --heading: var(--bark);
+  --border: var(--espresso);
+  --border-opacity: 0.15;
+  --accent: var(--gold);
+  --primary: var(--forest);
+  --primary-foreground: var(--clay);
+  --cta: var(--amber);
+  --cta-foreground: var(--espresso);
+  --link: var(--forest);
+  --link-hover: var(--amber);
+  --focus-ring: var(--amber);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  color: var(--text);
+  background: var(--bg);
+}
+
+* {
+  border-color: rgba(52, 42, 15, var(--border-opacity));
+}
+
+::selection {
+  background: rgba(4, 71, 48, 0.2);
+}
+
+/* Focus visible uses design system amber */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Leaflet custom divIcon — hide default leaflet-div-icon box (in layer so it doesn’t beat Tailwind utilities) */
+@layer components {
+  .marketplace-map-pin {
+    background: transparent !important;
+    border: none !important;
+  }
+}
