@@ -1,4 +1,4 @@
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import Link from "next/link";
 
 import { Container } from "@/components/Container";
@@ -14,7 +14,10 @@ export const metadata = {
   title: "Marketplace",
 };
 
-const MarketplaceMap = dynamic(
+/** Avoid static generation at build time (needs DB + env on Vercel). */
+export const dynamic = "force-dynamic";
+
+const MarketplaceMap = nextDynamic(
   () => import("@/components/MarketplaceMap").then((m) => ({ default: m.MarketplaceMap })),
   {
     ssr: false,

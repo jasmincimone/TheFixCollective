@@ -3,11 +3,11 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// SQLite: store as strings; use src/lib/roles.ts for constants
+// Roles stored as strings; see src/lib/roles.ts
 
 model User {
   id           String   @id @default(cuid())

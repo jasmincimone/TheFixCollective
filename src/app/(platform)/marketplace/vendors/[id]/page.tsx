@@ -1,4 +1,4 @@
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
@@ -46,7 +46,7 @@ async function loadVendorForPage(profileId: string, viewerUserId: string | undef
   return { vendor: own, isOwnerPreview: true as const };
 }
 
-const MarketplaceMap = dynamic(
+const MarketplaceMap = nextDynamic(
   () => import("@/components/MarketplaceMap").then((m) => ({ default: m.MarketplaceMap })),
   {
     ssr: false,
@@ -57,6 +57,8 @@ const MarketplaceMap = dynamic(
     ),
   }
 );
+
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
