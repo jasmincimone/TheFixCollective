@@ -4,15 +4,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 import { MenuAccountLink } from "@/components/MenuAccountLink";
-
-const PLATFORM_NAV = [
-  { href: "/marketplace", label: "Marketplace" },
-  { href: "/rootsync", label: "RootSync" },
-  { href: "/messages", label: "Messages" },
-  { href: "/community", label: "Community" },
-  { href: "/courses", label: "Courses" },
-  { href: "/downloads", label: "Downloads" },
-];
+import { PLATFORM_NAV_LINKS } from "@/config/platformNav";
 
 type Props = { onClose: () => void; closeHref?: string };
 
@@ -69,7 +61,7 @@ export function MobileMenuPanel({ onClose, closeHref }: Props) {
               Platform
             </h3>
             <ul className="mt-2 grid gap-0.5">
-              {PLATFORM_NAV.map((item) => (
+              {PLATFORM_NAV_LINKS.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}

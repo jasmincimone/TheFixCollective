@@ -1,26 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { CircleUser, Menu, ShoppingBag } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useContext, useMemo, useState } from "react";
 
 import { CartContext } from "@/context/CartContext";
+import { PLATFORM_NAV_LINKS } from "@/config/platformNav";
 import { SHOPS } from "@/config/shops";
 import { cn } from "@/lib/cn";
+import { leaveMenu, rememberPathBeforeMenu } from "@/lib/menuReturn";
 
 import { Container } from "./Container";
 import { ButtonLink } from "./ui/Button";
-
-const PRIMARY_NAV = [
-  { href: "/marketplace", label: "Marketplace" },
-  { href: "/rootsync", label: "RootSync" },
-  { href: "/messages", label: "Messages" },
-  { href: "/community", label: "Community" },
-  { href: "/courses", label: "Courses" },
-  { href: "/downloads", label: "Downloads" },
-];
 
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -29,6 +22,7 @@ function isActive(pathname: string, href: string) {
 
 export function SiteHeader() {
   const pathname = usePathname() || "/";
+  const router = useRouter();
   const { data: session, status: sessionStatus } = useSession();
   const [shopsOpen, setShopsOpen] = useState(false);
   const cart = useContext(CartContext);
@@ -55,14 +49,27 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-fix-border/15 bg-fix-surface">
       <Container className="flex h-16 items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Link
-            href={pathname === "/menu" ? "/" : "/menu"}
-            className="relative z-10 -ml-1 inline-flex h-11 min-w-[44px] shrink-0 items-center justify-center gap-1.5 rounded-full px-2 text-fix-text hover:bg-fix-bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-fix-cta focus-visible:ring-offset-2 active:opacity-90 lg:hidden"
-            aria-label="Menu"
-          >
-            <Menu className="h-6 w-6 shrink-0" aria-hidden />
-            <span className="text-sm font-medium">Menu</span>
-          </Link>
+          {pathname === "/menu" ? (
+            <button
+              type="button"
+              onClick={() => leaveMenu(router)}
+              className="relative z-10 -ml-1 inline-flex h-11 min-w-[44px] shrink-0 items-center justify-center gap-1.5 rounded-full px-2 text-fix-text hover:bg-fix-bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-fix-cta focus-visible:ring-offset-2 active:opacity-90 lg:hidden"
+              aria-label="Close menu"
+            >
+              <Menu className="h-6 w-6 shrink-0" aria-hidden />
+              <span className="text-sm font-medium">Menu</span>
+            </button>
+          ) : (
+            <Link
+              href="/menu"
+              onClick={() => rememberPathBeforeMenu(pathname)}
+              className="relative z-10 -ml-1 inline-flex h-11 min-w-[44px] shrink-0 items-center justify-center gap-1.5 rounded-full px-2 text-fix-text hover:bg-fix-bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-fix-cta focus-visible:ring-offset-2 active:opacity-90 lg:hidden"
+              aria-label="Menu"
+            >
+              <Menu className="h-6 w-6 shrink-0" aria-hidden />
+              <span className="text-sm font-medium">Menu</span>
+            </Link>
+          )}
 
           <Link
             href="/"
@@ -143,7 +150,7 @@ export function SiteHeader() {
               </div>
             ) : null}
           </div>
-          {PRIMARY_NAV.map((item) => (
+          {PLATFORM_NAV_LINKS.map((item) => (
             <Link
               key={item.href}
               href={item.href}

@@ -3,20 +3,12 @@ import { Suspense } from "react";
 
 import { MenuBackdropClose, MenuCloseButton } from "@/components/MenuCloseButton";
 import { MenuAccountLink } from "@/components/MenuAccountLink";
+import { PLATFORM_NAV_LINKS } from "@/config/platformNav";
 
 export const metadata = {
   title: "Menu",
   description: "Navigation menu for The Fix Collective",
 };
-
-const PLATFORM_NAV = [
-  { href: "/marketplace", label: "Marketplace" },
-  { href: "/rootsync", label: "RootSync" },
-  { href: "/messages", label: "Messages" },
-  { href: "/community", label: "Community" },
-  { href: "/courses", label: "Courses" },
-  { href: "/downloads", label: "Downloads" },
-];
 
 function AccountLinkFallback() {
   return (
@@ -66,7 +58,7 @@ export default function MenuPage() {
                 Platform
               </h2>
               <ul className="mt-2 grid gap-0.5">
-                {PLATFORM_NAV.map((item) => (
+                {PLATFORM_NAV_LINKS.map((item) => (
                   <li key={item.href}>
                     <Link
                       href={item.href}

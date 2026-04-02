@@ -3,7 +3,7 @@ import { RootSyncChat } from "@/components/RootSyncChat";
 import { Card } from "@/components/ui/Card";
 
 export const metadata = {
-  title: "RootSync",
+  title: "RootSync AI",
 };
 
 export default function RootSyncPage() {
@@ -11,7 +11,7 @@ export default function RootSyncPage() {
     <Container className="py-12 sm:py-16">
       <div className="max-w-3xl">
         <h1 className="text-3xl font-semibold tracking-tight text-fix-heading sm:text-4xl">
-          RootSync
+          RootSync AI
         </h1>
         <p className="mt-3 text-base text-fix-text-muted">
           Your AI guide for growing, eating well, and planning a resilient food
