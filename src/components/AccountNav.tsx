@@ -11,6 +11,18 @@ const linkClass =
   "block rounded-lg px-3 py-2 text-sm font-medium text-fix-text hover:bg-fix-bg-muted hover:text-fix-heading";
 const activeClass = "bg-fix-bg-muted text-fix-heading";
 
+/** Pick the most specific nav href so /account/vendor does not stay active on /account/vendor/listings. */
+function longestMatchingHref(pathname: string, hrefs: string[]): string | null {
+  let best: string | null = null;
+  for (const href of hrefs) {
+    const match = pathname === href || pathname.startsWith(`${href}/`);
+    if (match && href.length > (best?.length ?? -1)) {
+      best = href;
+    }
+  }
+  return best;
+}
+
 export function AccountNav() {
   const pathname = usePathname() || "/account";
   const { data: session } = useSession();
@@ -42,18 +54,20 @@ export function AccountNav() {
     { href: "/account/admin/users", label: "Users & roles", show: isAdmin },
   ];
 
+  const visible = items.filter((i) => i.show);
+  const hrefList = visible.map((i) => i.href);
+  const activeHref = longestMatchingHref(pathname, hrefList);
+
   return (
     <nav className="flex flex-col gap-0.5" aria-label="Account">
-      {items
-        .filter((i) => i.show)
-        .map(({ href, label }) => {
-          const active = pathname === href || (href !== "/account" && pathname.startsWith(`${href}/`));
-          return (
-            <Link key={href} href={href} className={cn(linkClass, active && activeClass)}>
-              {label}
-            </Link>
-          );
-        })}
+      {visible.map(({ href, label }) => {
+        const active = activeHref === href;
+        return (
+          <Link key={href} href={href} className={cn(linkClass, active && activeClass)}>
+            {label}
+          </Link>
+        );
+      })}
     </nav>
   );
 }

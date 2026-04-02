@@ -192,7 +192,7 @@ export function VendorMessenger({
         await refreshThreads();
         setListOpen(false);
         await loadThread(data.thread.id);
-        router.replace("/messages", { scroll: false });
+        router.replace("/messages/inbox", { scroll: false });
       }
     })();
   }, [

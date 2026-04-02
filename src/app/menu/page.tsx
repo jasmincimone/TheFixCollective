@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { Suspense } from "react";
 
+import { MenuBackdropClose, MenuCloseButton } from "@/components/MenuCloseButton";
 import { MenuAccountLink } from "@/components/MenuAccountLink";
 
 export const metadata = {
@@ -36,13 +36,7 @@ export default function MenuPage() {
         <div className="flex flex-col py-6 pl-6 pr-4">
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-semibold text-fix-heading">Menu</h1>
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-fix-text-muted hover:bg-fix-bg-muted hover:text-fix-heading"
-            >
-              <ArrowLeft className="h-4 w-4" aria-hidden />
-              Close
-            </Link>
+            <MenuCloseButton />
           </div>
 
           <nav className="mt-6 flex flex-col" aria-label="Main navigation">
@@ -88,11 +82,7 @@ export default function MenuPage() {
         </div>
       </aside>
 
-      <Link
-        href="/"
-        className="min-h-0 min-w-0 flex-1 bg-espresso/50"
-        aria-label="Close menu"
-      />
+      <MenuBackdropClose />
     </div>
   );
 }

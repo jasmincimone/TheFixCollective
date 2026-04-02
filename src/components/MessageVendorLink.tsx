@@ -18,7 +18,7 @@ export function MessageVendorLink({
   className,
 }: Props) {
   const { data: session, status } = useSession();
-  const href = `/messages?with=${encodeURIComponent(vendorProfileId)}`;
+  const href = `/messages/inbox?with=${encodeURIComponent(vendorProfileId)}`;
 
   if (status === "loading") {
     return (

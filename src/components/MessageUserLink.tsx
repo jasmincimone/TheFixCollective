@@ -21,7 +21,7 @@ export function MessageUserLink({
   className,
 }: Props) {
   const { data: session, status } = useSession();
-  const href = `/messages?withUser=${encodeURIComponent(targetUserId)}`;
+  const href = `/messages/inbox?withUser=${encodeURIComponent(targetUserId)}`;
 
   if (status === "loading") {
     return (
