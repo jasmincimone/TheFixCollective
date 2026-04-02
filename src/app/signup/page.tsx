@@ -14,6 +14,8 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [agreeSmsTwoFactorTerms, setAgreeSmsTwoFactorTerms] = useState(false);
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,12 +24,22 @@ export default function SignupPage() {
     e.preventDefault();
     setError("");
     setSuccess("");
+    if (!agreeSmsTwoFactorTerms) {
+      setError("You must agree to SMS and two-factor authentication terms to create an account.");
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password, name: name.trim() || undefined }),
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+          name: name.trim() || undefined,
+          agreeSmsTwoFactorTerms: true,
+          marketingOptIn,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -49,10 +61,11 @@ export default function SignupPage() {
 
   return (
     <Container className="py-12 sm:py-16">
-      <div className="mx-auto max-w-sm">
+      <div className="mx-auto max-w-md">
         <h1 className="text-2xl font-semibold tracking-tight text-fix-heading">Create account</h1>
         <p className="mt-1 text-sm text-fix-text-muted">
-          Create an account to view order history and download digital purchases.
+          Create an account to view order history and download digital purchases. You can add a phone number later in
+          Account Settings to use SMS verification and SMS two-factor.
         </p>
         <Card className="mt-6 p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -97,7 +110,58 @@ export default function SignupPage() {
               />
               <p className="mt-0.5 text-xs text-fix-text-muted">At least 8 characters</p>
             </div>
-            <Button type="submit" disabled={loading || !!success} className="w-full" variant="primary">
+
+            <div className="rounded-lg border-2 border-amber/40 bg-amber/5 p-4">
+              <p className="text-sm font-semibold text-fix-heading">Security &amp; communications</p>
+              <p className="mt-1 text-xs text-fix-text-muted">
+                Two-factor authentication (2FA) is optional—you can enable it in Account Settings after you add a phone.
+                By checking the first box, you agree to the terms for future SMS when you turn those features on.
+              </p>
+              <div className="mt-3 space-y-3">
+                <label className="flex cursor-pointer items-start gap-3 text-sm leading-snug text-fix-text">
+                  <input
+                    type="checkbox"
+                    checked={agreeSmsTwoFactorTerms}
+                    onChange={(e) => {
+                      setAgreeSmsTwoFactorTerms(e.target.checked);
+                      setError("");
+                    }}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-fix-border/40 text-amber focus:ring-amber"
+                    required
+                  />
+                  <span>
+                    I agree to receive text messages from The Fix Collective for <strong>account security</strong> and{" "}
+                    <strong>two-factor authentication</strong> when I enable those features (including verification and
+                    sign-in codes). Message and data rates may apply.{" "}
+                    <span className="text-bark">(Required)</span>
+                  </span>
+                </label>
+                <label className="flex cursor-pointer items-start gap-3 text-sm leading-snug text-fix-text">
+                  <input
+                    type="checkbox"
+                    checked={marketingOptIn}
+                    onChange={(e) => {
+                      setMarketingOptIn(e.target.checked);
+                      setError("");
+                    }}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-fix-border/40 text-amber focus:ring-amber"
+                  />
+                  <span>
+                    I want to receive <strong>optional marketing, promotional, and educational</strong> emails and texts
+                    from The Fix Collective. I can unsubscribe or change this anytime in Account Settings.{" "}
+                    <span className="text-fix-text-muted">(Optional)</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={loading || !!success || !agreeSmsTwoFactorTerms}
+              className="w-full"
+              variant="primary"
+              title={!agreeSmsTwoFactorTerms ? "Agree to SMS and security terms above" : undefined}
+            >
               {loading ? "Creating account…" : "Create account"}
             </Button>
           </form>

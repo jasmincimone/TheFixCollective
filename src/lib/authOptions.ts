@@ -2,7 +2,7 @@ import type { AuthOptions } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/auth";
-import { otpCodesEqual } from "@/lib/auth-tokens";
+import { normalizeOtpSixDigits, otpCodesEqual } from "@/lib/auth-tokens";
 import { ROLES, toVendorStatus } from "@/lib/roles";
 import { toNextAuthUser } from "@/lib/sessionUser";
 import { CHALLENGE_PURPOSE, TWO_FACTOR_METHOD } from "@/lib/twoFactor";
@@ -39,8 +39,8 @@ export const authOptions: AuthOptions = {
       async authorize(credentials) {
         if (!credentials?.challengeId || credentials?.code == null) return null;
         const challengeId = String(credentials.challengeId).trim();
-        const code = String(credentials.code).trim();
-        if (!challengeId || !code) return null;
+        const code = normalizeOtpSixDigits(String(credentials.code ?? ""));
+        if (!challengeId || code.length !== 6) return null;
         const challenge = await prisma.loginChallenge.findUnique({
           where: { id: challengeId },
         });

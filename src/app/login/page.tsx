@@ -12,7 +12,12 @@ import { FormFeedback } from "@/components/ui/FormFeedback";
 
 type PrepareOk =
   | { skipTwoFactor: true }
-  | { needsTwoFactor: true; challengeId: string; channel: "EMAIL" | "SMS" };
+  | {
+      needsTwoFactor: true;
+      challengeId: string;
+      channel: "EMAIL" | "SMS";
+      hint?: string;
+    };
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,6 +31,7 @@ export default function LoginPage() {
   const [step, setStep] = useState<"password" | "otp">("password");
   const [challengeId, setChallengeId] = useState<string | null>(null);
   const [otpChannel, setOtpChannel] = useState<"EMAIL" | "SMS" | null>(null);
+  const [otpPrepareHint, setOtpPrepareHint] = useState<string | null>(null);
   const [code, setCode] = useState("");
 
   const finishSignIn = async () => {
@@ -72,6 +78,7 @@ export default function LoginPage() {
       if ("needsTwoFactor" in data && data.needsTwoFactor && data.challengeId) {
         setChallengeId(data.challengeId);
         setOtpChannel(data.channel);
+        setOtpPrepareHint(typeof data.hint === "string" ? data.hint : null);
         setStep("otp");
         setCode("");
         setLoading(false);
@@ -164,6 +171,11 @@ export default function LoginPage() {
           ) : (
             <form onSubmit={handleOtpSubmit} className="space-y-4">
               <p className="text-sm text-fix-text-muted">{otpHint}</p>
+              {otpPrepareHint ? (
+                <p className="rounded-md border border-amber/40 bg-amber/10 px-3 py-2 text-xs text-fix-text">
+                  {otpPrepareHint}
+                </p>
+              ) : null}
               <div>
                 <label htmlFor="login-otp" className="block text-sm font-medium text-fix-text">
                   Verification code
@@ -191,6 +203,7 @@ export default function LoginPage() {
                     setStep("password");
                     setChallengeId(null);
                     setOtpChannel(null);
+                    setOtpPrepareHint(null);
                     setCode("");
                     setError("");
                   }}

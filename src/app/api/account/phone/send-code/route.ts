@@ -6,8 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { authOptions } from "@/lib/authOptions";
 import { generateOtpDigits, hashOtpCode } from "@/lib/auth-tokens";
 import { prisma } from "@/lib/prisma";
-import { normalizeE164 } from "@/lib/phone";
-import { sendSms } from "@/lib/sms";
+import { normalizePhoneForSms } from "@/lib/phone";
+import { isSmsSendAvailable, sendSms } from "@/lib/sms";
 import { CHALLENGE_CHANNEL, CHALLENGE_PURPOSE } from "@/lib/twoFactor";
 
 export const runtime = "nodejs";
@@ -19,18 +19,34 @@ export async function POST(request: NextRequest) {
   }
   try {
     const body = await request.json();
-    const phone = normalizeE164(typeof body?.phone === "string" ? body.phone : "");
-    if (!phone) {
+    if (body?.agreeToSmsTwoFactor !== true) {
       return NextResponse.json(
-        { error: "Enter a valid phone number in international format (e.g. +15551234567)." },
+        {
+          error:
+            "You must agree to receive security text messages (verification and sign-in codes) before we can send an SMS.",
+        },
         { status: 400 }
       );
     }
-    const sid = process.env.TWILIO_ACCOUNT_SID;
-    const tok = process.env.TWILIO_AUTH_TOKEN;
-    const from = process.env.TWILIO_FROM_NUMBER;
-    if (!sid || !tok || !from) {
-      return NextResponse.json({ error: "SMS is not configured on this server." }, { status: 503 });
+    const marketingOptIn = body?.marketingOptIn === true;
+    const phone = normalizePhoneForSms(typeof body?.phone === "string" ? body.phone : "");
+    if (!phone) {
+      return NextResponse.json(
+        {
+          error:
+            "Enter a valid mobile number: E.164 with + and country code (e.g. +15551234567), or 10-digit US/CA without +1.",
+        },
+        { status: 400 }
+      );
+    }
+    if (!isSmsSendAvailable()) {
+      return NextResponse.json(
+        {
+          error:
+            "SMS is not configured on this server. Add Twilio (see .env.example), or use local dev without VERCEL to print codes in the terminal.",
+        },
+        { status: 503 }
+      );
     }
 
     await prisma.loginChallenge.deleteMany({
@@ -63,7 +79,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: sent.error || "Could not send SMS." }, { status: 503 });
     }
 
-    return NextResponse.json({ challengeId });
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        consentSmsTwoFactorAt: new Date(),
+        marketingOptIn,
+        marketingOptInAt: marketingOptIn ? new Date() : null,
+      },
+    });
+
+    return NextResponse.json({
+      challengeId,
+      smsDelivery: sent.devBypass ? "dev_bypass" : "sms",
+      /** Echo back so the user can confirm Twilio is texting the number they intended. */
+      sentTo: phone,
+      ...(sent.devBypass || !sent.twilioMessageSid
+        ? {}
+        : {
+            twilioMessageSid: sent.twilioMessageSid,
+          }),
+    });
   } catch (e) {
     console.error("phone/send-code:", e);
     return NextResponse.json({ error: "Request failed." }, { status: 500 });

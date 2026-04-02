@@ -6,7 +6,7 @@ import { responseForPrismaError } from "@/lib/prismaHttpError";
 import { verifyPassword } from "@/lib/auth";
 import { generateOtpDigits, hashOtpCode } from "@/lib/auth-tokens";
 import { sendLoginOtpEmail } from "@/lib/email";
-import { sendSms } from "@/lib/sms";
+import { isSmsSendAvailable, sendSms } from "@/lib/sms";
 import { CHALLENGE_CHANNEL, CHALLENGE_PURPOSE, TWO_FACTOR_METHOD } from "@/lib/twoFactor";
 
 export const runtime = "nodejs";
@@ -40,6 +40,15 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    if (tf === TWO_FACTOR_METHOD.SMS && !user.consentSmsTwoFactorAt) {
+      return NextResponse.json(
+        {
+          error:
+            "SMS sign-in requires consent to security text messages. Open Account → Settings, agree to SMS for two-factor, and send a new verification code.",
+        },
+        { status: 403 }
+      );
+    }
     if (tf === TWO_FACTOR_METHOD.EMAIL) {
       const key = process.env.RESEND_API_KEY;
       const from = process.env.EMAIL_FROM;
@@ -50,16 +59,14 @@ export async function POST(request: NextRequest) {
         );
       }
     }
-    if (tf === TWO_FACTOR_METHOD.SMS) {
-      const sid = process.env.TWILIO_ACCOUNT_SID;
-      const tok = process.env.TWILIO_AUTH_TOKEN;
-      const from = process.env.TWILIO_FROM_NUMBER;
-      if (!sid || !tok || !from) {
-        return NextResponse.json(
-          { error: "SMS sign-in codes are not configured on this server." },
-          { status: 503 }
-        );
-      }
+    if (tf === TWO_FACTOR_METHOD.SMS && !isSmsSendAvailable()) {
+      return NextResponse.json(
+        {
+          error:
+            "SMS sign-in codes are not configured on this server. Add Twilio env vars (see .env.example) or use local dev without VERCEL for a terminal-only bypass.",
+        },
+        { status: 503 }
+      );
     }
 
     await prisma.loginChallenge.deleteMany({
@@ -87,6 +94,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    let smsUsedDevBypass = false;
     if (channel === CHALLENGE_CHANNEL.EMAIL) {
       const sent = await sendLoginOtpEmail(user.email, code);
       if (!sent.ok) {
@@ -105,12 +113,18 @@ export async function POST(request: NextRequest) {
           { status: 503 }
         );
       }
+      smsUsedDevBypass = sent.devBypass;
     }
 
     return NextResponse.json({
       needsTwoFactor: true,
       challengeId,
       channel,
+      ...(smsUsedDevBypass
+        ? {
+            hint: "Twilio is not configured — check the terminal running `next dev` for your sign-in code (no text was sent).",
+          }
+        : {}),
     });
   } catch (e) {
     console.error("login-prepare:", e);

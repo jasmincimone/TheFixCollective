@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
+import { put } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
@@ -213,13 +214,43 @@ export async function POST(request: NextRequest) {
     const { ext } = resolved;
 
     const buffer = Buffer.from(await blob.arrayBuffer());
+    const filename = `${crypto.randomUUID()}${ext}`;
+
+    const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+    if (blobToken) {
+      const contentType =
+        mimeType.trim() ||
+        (ext === ".jpg"
+          ? "image/jpeg"
+          : ext === ".png"
+            ? "image/png"
+            : ext === ".webp"
+              ? "image/webp"
+              : "image/gif");
+      const uploaded = await put(`vendor-listings/${filename}`, buffer, {
+        access: "public",
+        contentType,
+        token: blobToken,
+      });
+      return NextResponse.json({ url: uploaded.url });
+    }
+
+    if (process.env.VERCEL) {
+      return NextResponse.json(
+        {
+          error: "Image upload is not configured on this server.",
+          hint:
+            "Vercel cannot save files to disk. In Vercel: Storage → Blob → create a store and connect it to this project (adds BLOB_READ_WRITE_TOKEN), then redeploy. Or paste a full https:// image URL in the Image address field.",
+          code: "BLOB_NOT_CONFIGURED",
+        },
+        { status: 503 }
+      );
+    }
+
     const dir = path.join(process.cwd(), "public", "uploads", "vendor-listings");
     await mkdir(dir, { recursive: true });
-
-    const filename = `${crypto.randomUUID()}${ext}`;
     const fullPath = path.join(dir, filename);
     await writeFile(fullPath, buffer);
-
     const publicUrl = `/uploads/vendor-listings/${filename}`;
     return NextResponse.json({ url: publicUrl });
   } catch (e) {

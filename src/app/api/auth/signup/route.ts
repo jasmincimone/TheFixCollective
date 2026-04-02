@@ -37,10 +37,26 @@ function prismaErrorMessage(e: unknown): string | null {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password, name } = body as { email?: string; password?: string; name?: string };
+    const { email, password, name, agreeSmsTwoFactorTerms, marketingOptIn } = body as {
+      email?: string;
+      password?: string;
+      name?: string;
+      agreeSmsTwoFactorTerms?: unknown;
+      marketingOptIn?: unknown;
+    };
     if (!email?.trim() || !password) {
       return NextResponse.json({ error: "Email and password required" }, { status: 400 });
     }
+    if (agreeSmsTwoFactorTerms !== true) {
+      return NextResponse.json(
+        {
+          error:
+            "You must agree to receive SMS/text messages for account security and two-factor authentication when you enable those features.",
+        },
+        { status: 400 }
+      );
+    }
+    const marketing = marketingOptIn === true;
     const emailNorm = email.trim().toLowerCase();
     const existing = await prisma.user.findUnique({ where: { email: emailNorm } });
     if (existing) {
@@ -53,6 +69,9 @@ export async function POST(request: NextRequest) {
         passwordHash,
         name: name?.trim() || null,
         role: ROLES.CUSTOMER,
+        smsTwoFactorSignupConsentAt: new Date(),
+        marketingOptIn: marketing,
+        marketingOptInAt: marketing ? new Date() : null,
       },
     });
     return NextResponse.json({ ok: true });

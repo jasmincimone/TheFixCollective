@@ -28,3 +28,9 @@ export function otpCodesEqual(storedHex: string, inputCode: string, challengeId:
 export function generateOtpDigits(): string {
   return String(randomInt(100000, 1000000));
 }
+
+/** Strip non-digits; if longer than 6, use the last 6 (handles pasted SMS with extra text). */
+export function normalizeOtpSixDigits(input: string): string {
+  const d = input.replace(/\D/g, "");
+  return d.length > 6 ? d.slice(-6) : d;
+}

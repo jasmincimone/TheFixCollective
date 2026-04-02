@@ -20,6 +20,13 @@ model User {
   phoneVerifiedAt    DateTime?
   /// NONE | EMAIL | SMS
   twoFactorMethod    String    @default("NONE")
+  /// When set, user agreed to receive SMS for security (verification & sign-in codes).
+  consentSmsTwoFactorAt DateTime?
+  /// Acknowledged SMS/2FA terms at sign-up (before adding a phone).
+  smsTwoFactorSignupConsentAt DateTime?
+  /// Opt-in for marketing/promotional email and SMS from The Fix Collective.
+  marketingOptIn     Boolean   @default(false)
+  marketingOptInAt     DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   orders       Order[]

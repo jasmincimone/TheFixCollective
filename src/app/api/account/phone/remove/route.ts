@@ -27,6 +27,7 @@ export async function POST() {
       data: {
         phone: null,
         phoneVerifiedAt: null,
+        consentSmsTwoFactorAt: null,
         ...(tf === TWO_FACTOR_METHOD.SMS ? { twoFactorMethod: TWO_FACTOR_METHOD.NONE } : {}),
       },
     });

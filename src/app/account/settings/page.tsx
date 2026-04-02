@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { FormFeedback } from "@/components/ui/FormFeedback";
+import { normalizeOtpSixDigits } from "@/lib/auth-tokens";
 import { TWO_FACTOR_METHOD } from "@/lib/twoFactor";
 
 type SettingsState = {
@@ -15,6 +16,10 @@ type SettingsState = {
   twoFactorMethod: string;
   phone: string | null;
   phoneVerifiedAt: string | null;
+  consentSmsTwoFactorAt: string | null;
+  smsTwoFactorSignupConsentAt: string | null;
+  marketingOptIn: boolean;
+  marketingOptInAt: string | null;
 };
 
 function Section({
@@ -59,9 +64,17 @@ export default function AccountSettingsPage() {
   const [phoneInput, setPhoneInput] = useState("");
   const [challengeId, setChallengeId] = useState<string | null>(null);
   const [verifyCode, setVerifyCode] = useState("");
+  /** Set when the last send-code response indicated real Twilio vs local dev bypass (no SMS). */
+  const [phoneVerifyDelivery, setPhoneVerifyDelivery] = useState<"sms" | "dev_bypass" | null>(null);
+  /** Last Twilio send metadata so the user can confirm the destination and look up logs. */
+  const [lastSmsTrace, setLastSmsTrace] = useState<{ sentTo: string; twilioSid?: string } | null>(null);
+
+  const [agreeSmsTwoFactor, setAgreeSmsTwoFactor] = useState(false);
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
+  const [marketingSaving, setMarketingSaving] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [removingPhone, setRemovingPhone] = useState(false);
 
@@ -89,6 +102,7 @@ export default function AccountSettingsPage() {
     setData(j);
     setNameInput(j.name || "");
     setPhoneInput(j.phone || "");
+    setMarketingOptIn(Boolean(j.marketingOptIn));
     setNewEmail("");
     setEmailPassword("");
   }, []);
@@ -209,17 +223,53 @@ export default function AccountSettingsPage() {
     setSaving(false);
   };
 
+  const onSaveMarketingPreference = async () => {
+    setTfaErr("");
+    setTfaMsg("");
+    setMarketingSaving(true);
+    try {
+      const res = await fetch("/api/account/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ marketingOptIn }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setTfaErr(typeof j.error === "string" ? j.error : "Could not save preference.");
+        setMarketingSaving(false);
+        return;
+      }
+      setTfaMsg("Marketing preference saved.");
+      void load();
+    } catch {
+      setTfaErr("Something went wrong. Check your connection and try again.");
+    }
+    setMarketingSaving(false);
+  };
+
   const onSendCode = async () => {
     setTfaErr("");
     setTfaMsg("");
+    setPhoneVerifyDelivery(null);
+    setLastSmsTrace(null);
     setSending(true);
     try {
       const res = await fetch("/api/account/phone/send-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: phoneInput.trim() }),
+        body: JSON.stringify({
+          phone: phoneInput.trim(),
+          agreeToSmsTwoFactor: true,
+          marketingOptIn,
+        }),
       });
-      const j = await res.json().catch(() => ({}));
+      const j = (await res.json().catch(() => ({}))) as {
+        challengeId?: string;
+        smsDelivery?: string;
+        sentTo?: string;
+        twilioMessageSid?: string;
+        error?: string;
+      };
       if (!res.ok) {
         setTfaErr(typeof j.error === "string" ? j.error : "Could not send SMS.");
         setSending(false);
@@ -227,7 +277,21 @@ export default function AccountSettingsPage() {
       }
       setChallengeId(j.challengeId || null);
       setVerifyCode("");
-      setTfaMsg("Submitted. Enter the code we texted you below.");
+      if (j.smsDelivery === "dev_bypass") {
+        setPhoneVerifyDelivery("dev_bypass");
+        setTfaMsg(
+          "No SMS was sent — Twilio is not configured on this server. Open the terminal where you run `next dev`: the verification code was printed there. Add TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_FROM_NUMBER (or TWILIO_MESSAGING_SERVICE_SID) to .env.local to receive real texts."
+        );
+        void load();
+      } else {
+        setPhoneVerifyDelivery("sms");
+        setLastSmsTrace({
+          sentTo: typeof j.sentTo === "string" ? j.sentTo : "",
+          twilioSid: typeof j.twilioMessageSid === "string" ? j.twilioMessageSid : undefined,
+        });
+        setTfaMsg("Check your phone for the 6-digit code.");
+        void load();
+      }
     } catch {
       setTfaErr("Something went wrong. Check your connection and try again.");
     }
@@ -240,25 +304,28 @@ export default function AccountSettingsPage() {
     setTfaMsg("");
     setVerifying(true);
     try {
+      const code = normalizeOtpSixDigits(verifyCode);
       const res = await fetch("/api/account/phone/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ challengeId, code: verifyCode.trim() }),
+        body: JSON.stringify({ challengeId, code }),
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
         setTfaErr(typeof j.error === "string" ? j.error : "Verification failed.");
-        setVerifying(false);
         return;
       }
       setChallengeId(null);
       setVerifyCode("");
+      setPhoneVerifyDelivery(null);
+      setLastSmsTrace(null);
       setTfaMsg("Saved. Your phone is verified.");
-      await load();
+      void load();
     } catch {
       setTfaErr("Something went wrong. Check your connection and try again.");
+    } finally {
+      setVerifying(false);
     }
-    setVerifying(false);
   };
 
   const onRemovePhone = async () => {
@@ -278,6 +345,8 @@ export default function AccountSettingsPage() {
       }
       setChallengeId(null);
       setVerifyCode("");
+      setPhoneVerifyDelivery(null);
+      setLastSmsTrace(null);
       setTfaMsg("Saved. Phone number removed.");
       await load();
     } catch {
@@ -514,16 +583,75 @@ export default function AccountSettingsPage() {
           )}
         </Card>
 
-        <Card className="p-5">
-          <h3 className="text-sm font-semibold text-fix-heading">Phone number (for SMS)</h3>
+        <Card className="p-5 ring-1 ring-fix-border/30">
+          <h3 className="text-sm font-semibold text-fix-heading">Phone number &amp; SMS consent</h3>
           <p className="mt-2 text-sm text-fix-text-muted">
-            International format (E.164), e.g. +15551234567. We text a code to verify before SMS sign-in works.
+            Add a phone number to use SMS verification and SMS two-factor. Confirm the two consent boxes below
+            first—then enter your number and request a code.
           </p>
-          <div className="mt-4 space-y-3">
+          {data.smsTwoFactorSignupConsentAt ? (
+            <p className="mt-2 text-xs text-fix-text-muted">
+              You agreed to SMS/2FA terms when you created this account (record on file).
+            </p>
+          ) : null}
+          <div className="mt-4 max-w-lg space-y-3 rounded-lg border-2 border-amber/40 bg-amber/5 p-4">
+            <p className="text-sm font-semibold text-fix-heading">Required consent before we text you</p>
+            <label className="flex cursor-pointer items-start gap-3 text-sm leading-snug text-fix-text">
+              <input
+                type="checkbox"
+                checked={agreeSmsTwoFactor}
+                onChange={(e) => {
+                  setAgreeSmsTwoFactor(e.target.checked);
+                  setTfaErr("");
+                  setTfaMsg("");
+                }}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-fix-border/40 text-amber focus:ring-amber"
+              />
+              <span>
+                I agree to receive SMS/text messages for <strong>account security</strong> (phone verification and sign-in
+                codes) and two-factor authentication when enabled. Message and data rates may apply.
+              </span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-3 text-sm leading-snug text-fix-text">
+              <input
+                type="checkbox"
+                checked={marketingOptIn}
+                onChange={(e) => {
+                  setMarketingOptIn(e.target.checked);
+                  setTfaErr("");
+                  setTfaMsg("");
+                }}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-fix-border/40 text-amber focus:ring-amber"
+              />
+              <span>
+                I want to receive <strong>optional marketing, promotional, and educational</strong> emails and texts from
+                The Fix Collective. I can change this anytime here.
+              </span>
+            </label>
+            <div className="flex flex-wrap items-center gap-2 border-t border-amber/20 pt-3">
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                disabled={marketingSaving}
+                onClick={() => void onSaveMarketingPreference()}
+              >
+                {marketingSaving ? "Saving…" : "Save marketing preference only"}
+              </Button>
+              <span className="text-xs text-fix-text-muted">
+                (Sending a verification code also saves your marketing choice.)
+              </span>
+            </div>
+          </div>
+          <div className="mt-6 space-y-3">
             <div>
               <label htmlFor="settings-phone" className="block text-sm font-medium text-fix-text">
                 Phone number
               </label>
+              <p className="mt-0.5 text-xs text-fix-text-muted">
+                Use <strong>+1</strong> and country code (e.g. <code className="text-xs">+15551234567</code>) or a{" "}
+                <strong>10-digit US/CA</strong> number.
+              </p>
               <input
                 id="settings-phone"
                 type="tel"
@@ -534,15 +662,65 @@ export default function AccountSettingsPage() {
                   setTfaMsg("");
                   setTfaErr("");
                 }}
-                placeholder="+15551234567"
+                placeholder="+15551234567 or 5551234567"
                 className={inputClass}
               />
             </div>
             {data.phoneVerifiedAt && data.phone && (
               <p className="text-xs text-fix-text-muted">Verified: {data.phone}</p>
             )}
+            <p className="text-xs text-fix-text-muted">
+              Requesting a new code replaces the previous one — always use the latest text.
+            </p>
+            {phoneVerifyDelivery === "sms" && lastSmsTrace?.sentTo ? (
+              <details className="max-w-lg rounded-md border border-fix-border/25 bg-fix-surface/60 px-3 py-2 text-xs text-fix-text-muted">
+                <summary className="cursor-pointer font-medium text-fix-text">
+                  Not receiving the text?
+                </summary>
+                <ul className="mt-2 list-disc space-y-1.5 pl-4">
+                  <li>
+                    We requested delivery to{" "}
+                    <strong className="text-fix-text">{lastSmsTrace.sentTo}</strong>. Confirm that matches the device you
+                    are checking.
+                  </li>
+                  <li>
+                    <strong>Twilio trial:</strong> add that exact number under{" "}
+                    <span className="whitespace-nowrap">Phone Numbers → Manage → Verified Caller IDs</span> in Twilio, or
+                    the message will not be delivered.
+                  </li>
+                  <li>
+                    In{" "}
+                    <a
+                      href="https://console.twilio.com/us1/monitor/logs/sms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-fix-link hover:text-fix-link-hover"
+                    >
+                      Twilio → Monitor → Messaging logs
+                    </a>
+                    , search for your message
+                    {lastSmsTrace.twilioSid ? (
+                      <>
+                        {" "}
+                        (SID{" "}
+                        <code className="rounded bg-fix-surface px-1 text-[0.7rem]">{lastSmsTrace.twilioSid}</code>)
+                      </>
+                    ) : null}
+                    . Status <code className="text-[0.7rem]">undelivered</code> or an error code explains carrier
+                    rejection (A2P/10DLC, blocked, etc.).
+                  </li>
+                </ul>
+              </details>
+            ) : null}
             <div className="flex flex-wrap gap-2">
-              <Button type="button" size="sm" variant="secondary" disabled={sending} onClick={() => void onSendCode()}>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                disabled={sending || !agreeSmsTwoFactor}
+                title={!agreeSmsTwoFactor ? "Check the box to agree to security SMS first" : undefined}
+                onClick={() => void onSendCode()}
+              >
                 {sending ? "Sending…" : "Send verification code"}
               </Button>
               {(data.phone || data.phoneVerifiedAt) && (
@@ -558,28 +736,37 @@ export default function AccountSettingsPage() {
               )}
             </div>
             {challengeId && (
-              <div className="flex max-w-md flex-col gap-2 sm:flex-row sm:items-end">
-                <div className="flex-1">
-                  <label htmlFor="phone-code" className="block text-xs font-medium text-fix-text">
-                    Code from SMS
-                  </label>
-                  <input
-                    id="phone-code"
-                    type="text"
-                    inputMode="numeric"
-                    value={verifyCode}
-                    onChange={(e) => {
-                      setVerifyCode(e.target.value);
-                      setTfaMsg("");
-                      setTfaErr("");
-                    }}
-                    className={inputClass}
-                    placeholder="6-digit code"
-                  />
+              <div className="max-w-md space-y-3">
+                {phoneVerifyDelivery === "dev_bypass" ? (
+                  <p className="rounded-md border border-amber/50 bg-amber/10 px-3 py-2 text-sm text-fix-text">
+                    The code is in your <strong>dev server terminal</strong> (not in Messages). Look for{" "}
+                    <code className="rounded bg-fix-surface px-1 text-xs">[sms] Twilio not configured</code> and the line
+                    with your code.
+                  </p>
+                ) : null}
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                  <div className="flex-1">
+                    <label htmlFor="phone-code" className="block text-xs font-medium text-fix-text">
+                      {phoneVerifyDelivery === "dev_bypass" ? "Verification code" : "Code from SMS"}
+                    </label>
+                    <input
+                      id="phone-code"
+                      type="text"
+                      inputMode="numeric"
+                      value={verifyCode}
+                      onChange={(e) => {
+                        setVerifyCode(e.target.value);
+                        setTfaMsg("");
+                        setTfaErr("");
+                      }}
+                      className={inputClass}
+                      placeholder="6-digit code"
+                    />
+                  </div>
+                  <Button type="button" size="sm" variant="primary" disabled={verifying} onClick={() => void onVerify()}>
+                    {verifying ? "Verifying…" : "Verify phone"}
+                  </Button>
                 </div>
-                <Button type="button" size="sm" variant="primary" disabled={verifying} onClick={() => void onVerify()}>
-                  {verifying ? "Verifying…" : "Verify phone"}
-                </Button>
               </div>
             )}
           </div>

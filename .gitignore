@@ -30,3 +30,5 @@ prisma/dev.db-journal
 # vendor-uploaded listing images (local dev)
 public/uploads/
 
+.vercel
+.env*.local

@@ -3,8 +3,9 @@ import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 
 import { authOptions } from "@/lib/authOptions";
-import { otpCodesEqual } from "@/lib/auth-tokens";
+import { normalizeOtpSixDigits, otpCodesEqual } from "@/lib/auth-tokens";
 import { prisma } from "@/lib/prisma";
+import { responseForPrismaError } from "@/lib/prismaHttpError";
 import { CHALLENGE_PURPOSE } from "@/lib/twoFactor";
 
 export const runtime = "nodejs";
@@ -17,9 +18,13 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const challengeId = typeof body?.challengeId === "string" ? body.challengeId.trim() : "";
-    const code = typeof body?.code === "string" ? body.code.trim() : "";
-    if (!challengeId || !code) {
-      return NextResponse.json({ error: "Challenge and code required." }, { status: 400 });
+    const rawCode = typeof body?.code === "string" ? body.code : "";
+    const code = normalizeOtpSixDigits(rawCode);
+    if (!challengeId || code.length !== 6) {
+      return NextResponse.json(
+        { error: "Enter the 6-digit code from the text message (numbers only)." },
+        { status: 400 }
+      );
     }
     const challenge = await prisma.loginChallenge.findUnique({
       where: { id: challengeId },
@@ -71,6 +76,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("phone/verify:", e);
+    const mapped = responseForPrismaError(e);
+    if (mapped) {
+      return NextResponse.json({ error: mapped.error }, { status: mapped.status });
+    }
     return NextResponse.json({ error: "Verification failed." }, { status: 500 });
   }
 }
