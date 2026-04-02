@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
 import { useCart } from "@/context/CartContext";
-import { getProduct } from "@/data/products";
 import { formatPrice } from "@/lib/format";
 import { Container } from "@/components/Container";
 import { Card } from "@/components/ui/Card";
@@ -15,7 +14,7 @@ const SHIPPING_CENTS = 599;
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, itemCount, clearCart } = useCart();
+  const { items, itemCount, clearCart, resolveProduct } = useCart();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -31,7 +30,7 @@ export default function CheckoutPage() {
 
   const lineItems = items
     .map((item) => {
-      const product = getProduct(item.productId);
+      const product = resolveProduct(item.productId);
       if (!product) return null;
       return {
         key: item.key,

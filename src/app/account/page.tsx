@@ -90,9 +90,12 @@ export default async function AccountPage() {
           <Card className="border-forest/30 p-5 sm:col-span-2">
             <div className="text-sm font-semibold text-fix-heading">Administration</div>
             <p className="mt-2 text-sm text-fix-text-muted">
-              Approve vendors and manage user roles.
+              Approve vendors, manage user roles, and edit the four platform shops.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
+              <ButtonLink href="/account/admin/shops" variant="cta" size="sm">
+                Platform shops
+              </ButtonLink>
               <ButtonLink href="/account/admin/vendors" variant="secondary" size="sm">
                 Vendor requests
               </ButtonLink>

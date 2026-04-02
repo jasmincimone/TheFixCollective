@@ -44,7 +44,7 @@ export const SHOPS: ShopConfig[] = [
   },
   {
     slug: "self-care",
-    name: "The Fix Self-Care",
+    name: "The Fix Self Care Co",
     tagline: "Rituals for real life.",
     description:
       "Body care, herbal wellness, and gentle routines that actually stick.",

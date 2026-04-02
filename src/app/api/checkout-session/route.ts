@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getProduct } from "@/data/products";
+import { getMergedProductForCheckout } from "@/lib/shopCatalog";
 import { prisma } from "@/lib/prisma";
 import { getStripe } from "@/lib/stripe";
 
@@ -27,14 +27,14 @@ export async function POST(request: NextRequest) {
     }
 
     const lineItems: Array<{
-      product: ReturnType<typeof getProduct>;
+      product: NonNullable<Awaited<ReturnType<typeof getMergedProductForCheckout>>>;
       quantity: number;
       selections?: Record<string, string>;
       displayName: string;
     }> = [];
 
     for (const { productId, quantity, selections } of items) {
-      const product = getProduct(productId);
+      const product = await getMergedProductForCheckout(productId);
       if (!product || quantity < 1) continue;
       const selectionLabels =
         product.options?.map((opt) => {

@@ -9,8 +9,9 @@ import {
   useEffect,
 } from "react";
 
-import { getProduct } from "@/data/products";
+import { getProduct as getStaticProduct } from "@/data/products";
 import type { CartItem } from "@/types/product";
+import type { Product } from "@/types/product";
 
 const CART_STORAGE_KEY = "fix-collective-cart-v2";
 
@@ -21,6 +22,8 @@ type CartContextValue = {
   updateQuantity: (key: string, quantity: number) => void;
   itemCount: number;
   clearCart: () => void;
+  /** Merged catalog (DB + seed). Falls back to static until the snapshot loads. */
+  resolveProduct: (productId: string) => Product | undefined;
 };
 
 export const CartContext = createContext<CartContextValue | null>(null);
@@ -73,6 +76,7 @@ function saveCart(items: CartItem[]) {
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [mounted, setMounted] = useState(false);
+  const [catalogById, setCatalogById] = useState<Map<string, Product> | null>(null);
 
   useEffect(() => {
     setItems(loadCart());
@@ -80,12 +84,38 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    fetch("/api/catalog/products")
+      .then((r) => r.json())
+      .then((data: { products?: Product[] }) => {
+        if (cancelled || !Array.isArray(data.products)) return;
+        const m = new Map<string, Product>();
+        for (const p of data.products) {
+          m.set(p.id, p);
+        }
+        setCatalogById(m);
+      })
+      .catch(() => {
+        if (!cancelled) setCatalogById(new Map());
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const resolveProduct = useCallback(
+    (productId: string) => catalogById?.get(productId) ?? getStaticProduct(productId),
+    [catalogById],
+  );
+
+  useEffect(() => {
     if (mounted) saveCart(items);
   }, [items, mounted]);
 
-  const addItem = useCallback((productId: string, quantity = 1, selections?: CartItem["selections"]) => {
-    const product = getProduct(productId);
-    if (!product) return;
+  const addItem = useCallback(
+    (productId: string, quantity = 1, selections?: CartItem["selections"]) => {
+      const product = resolveProduct(productId);
+      if (!product) return;
     const key = makeCartKey(productId, selections);
     setItems((prev) => {
       const existing = prev.find((i) => i.key === key);
@@ -98,7 +128,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         : [...prev, { key, productId, quantity, selections }];
       return next;
     });
-  }, []);
+  },
+    [resolveProduct],
+  );
 
   const removeItem = useCallback((key: string) => {
     setItems((prev) => prev.filter((i) => i.key !== key));
@@ -131,8 +163,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       updateQuantity,
       itemCount,
       clearCart,
+      resolveProduct,
     }),
-    [items, addItem, removeItem, updateQuantity, itemCount, clearCart]
+    [items, addItem, removeItem, updateQuantity, itemCount, clearCart, resolveProduct]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

@@ -16,10 +16,10 @@ export default function HomePage() {
             {/* Left: hero copy */}
             <div className="flex flex-col justify-center bg-fix-bg-muted px-6 py-14 sm:px-8 sm:py-20 lg:rounded-l-2xl">
               <h1 className="text-3xl font-bold tracking-tight text-fix-heading sm:text-4xl md:text-5xl">
-                Revolutionizing Self-Care from Soil to Soul.
+                Let&apos;s Grow Something!
               </h1>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-fix-text">
-                Experience all that The Fix Collective has to offer, from
+                Experience all that The Fix Collective has to offer, from urban gardening and
                 self-care products, to survival preparedness, we have you covered
                 when it comes to the highest level of self-love, self-care, and
                 self-expression.
@@ -82,16 +82,6 @@ export default function HomePage() {
       <section>
         <Container className="py-12">
           <div className="grid gap-6 lg:grid-cols-3">
-            <Card className="p-6">
-              <div className="text-sm font-semibold text-fix-heading">
-                Scalable architecture
-              </div>
-              <p className="mt-2 text-sm leading-relaxed text-fix-text-muted">
-                A clean Next.js App Router foundation with shared components and
-                shop config—ready for products, cart, checkout, accounts, and
-                content.
-              </p>
-            </Card>
             <Card className="p-6">
               <div className="text-sm font-semibold text-fix-heading">
                 Community-ready

@@ -1,99 +1,38 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 import { Container } from "@/components/Container";
 import { Card } from "@/components/ui/Card";
 import { ButtonLink } from "@/components/ui/Button";
-import {
-  getShop,
-  getShopEmphasisClasses,
-  SHOP_CONTENT,
-  type ShopSlug
-} from "@/config/shops";
+import { getShop, getShopEmphasisClasses, type ShopSlug } from "@/config/shops";
+import { loadMergedShopDisplay } from "@/lib/shopPageDisplay";
 
-export function generateMetadata({
-  params
+export async function generateMetadata({
+  params,
 }: {
   params: { slug: string };
 }) {
   const shop = getShop(params.slug);
   if (!shop) return {};
-
+  const display = await loadMergedShopDisplay(params.slug);
   return {
-    title: shop.name,
-    description: shop.description
+    title: display?.name ?? shop.name,
+    description: display?.description ?? shop.description,
   };
 }
 
-const FEATURE_SECTIONS: Record<
-  string,
-  { title: string; description: string; href: string; cta: string }[]
-> = {
-  "urban-roots": [
-    {
-      title: "Plant care essentials",
-      description: "Soil, tools, and daily habits for thriving greens.",
-      href: "/marketplace",
-      cta: "Explore marketplace"
-    },
-    {
-      title: "Grow guides",
-      description: "Short, practical learning—built for real schedules.",
-      href: "/courses",
-      cta: "Browse courses"
-    }
-  ],
-  "self-care": [
-    {
-      title: "Simple rituals",
-      description: "Routines designed to feel good and stay consistent.",
-      href: "/downloads",
-      cta: "See downloads"
-    },
-    {
-      title: "Community support",
-      description: "Connect, ask, share, and learn together.",
-      href: "/community",
-      cta: "Join community"
-    }
-  ],
-  stitch: [
-    {
-      title: "Patterns & projects",
-      description: "From quick repairs to durable keepsakes.",
-      href: "/downloads",
-      cta: "Get patterns"
-    },
-    {
-      title: "Mending meetups",
-      description: "Connect with makers and find tips in the community.",
-      href: "/community",
-      cta: "Join community"
-    }
-  ],
-  "survival-kits": [
-    {
-      title: "Preparedness kits",
-      description: "Essentials that keep you calm, capable, and ready.",
-      href: "/shops/survival-kits",
-      cta: "Shop kits"
-    },
-    {
-      title: "Checklists & plans",
-      description: "Digital downloads to prep without overwhelm.",
-      href: "/downloads",
-      cta: "See checklists"
-    }
-  ]
-};
-
-export default function ShopPage({ params }: { params: { slug: string } }) {
+export default async function ShopPage({ params }: { params: { slug: string } }) {
   const shop = getShop(params.slug);
   if (!shop) notFound();
 
+  const display = await loadMergedShopDisplay(params.slug);
+  if (!display) notFound();
+
   const shopKey = shop.slug as ShopSlug;
-  const content = SHOP_CONTENT[shopKey];
-  const features = FEATURE_SECTIONS[shop.slug] ?? [];
+  const content = display.content;
+  const features = display.features;
 
   return (
     <div>
@@ -101,15 +40,17 @@ export default function ShopPage({ params }: { params: { slug: string } }) {
         <Container className="py-12 sm:py-16">
           <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1fr_auto] lg:gap-16">
             <div className="min-w-0">
-              <div className={`inline-flex items-center gap-2 rounded-full border border-fix-border/20 bg-fix-surface px-3 py-1 text-xs font-semibold shadow-soft ${getShopEmphasisClasses(shop.slug).text}`}>
+              <div
+                className={`inline-flex items-center gap-2 rounded-full border border-fix-border/20 bg-fix-surface px-3 py-1 text-xs font-semibold shadow-soft ${getShopEmphasisClasses(shopKey).text}`}
+              >
                 Shop
               </div>
               <h1 className="mt-4 text-3xl font-semibold tracking-tight text-fix-heading sm:text-4xl">
-                {shop.name}
+                {display.name}
               </h1>
-              <p className="mt-2 text-lg text-fix-text-muted">{shop.tagline}</p>
+              <p className="mt-2 text-lg text-fix-text-muted">{display.tagline}</p>
               <p className="mt-4 text-base leading-relaxed text-fix-text-muted">
-                {shop.description}
+                {display.description}
               </p>
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -141,34 +82,26 @@ export default function ShopPage({ params }: { params: { slug: string } }) {
         <Container className="py-12">
           <div className="grid gap-6 lg:grid-cols-3">
             <Card className="p-6 lg:col-span-2">
-              <div className="text-sm font-semibold text-fix-heading">
-                Categories
-              </div>
+              <div className="text-sm font-semibold text-fix-heading">Categories</div>
               <p className="mt-2 text-sm leading-relaxed text-fix-text-muted">
-                Explore what this shop offers today. These categories map cleanly
-                to collections or product groups in your ecommerce backend.
+                Explore what this shop offers today. These categories map cleanly to collections or
+                product groups in the catalog.
               </p>
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 {content.categories.map((cat) => (
                   <div
                     key={cat.id}
-                    className={`rounded-2xl border border-fix-border/15 bg-fix-bg-muted p-4 ${getShopEmphasisClasses(shop.slug).border}`}
+                    className={`rounded-2xl border border-fix-border/15 bg-fix-bg-muted p-4 ${getShopEmphasisClasses(shopKey).border}`}
                   >
-                    <div className="text-sm font-semibold text-fix-heading">
-                      {cat.name}
-                    </div>
-                    <div className="mt-1 text-sm text-fix-text-muted">
-                      {cat.description}
-                    </div>
+                    <div className="text-sm font-semibold text-fix-heading">{cat.name}</div>
+                    <div className="mt-1 text-sm text-fix-text-muted">{cat.description}</div>
                   </div>
                 ))}
               </div>
             </Card>
 
             <Card className="p-6">
-              <div className="text-sm font-semibold text-fix-heading">
-                Featured items
-              </div>
+              <div className="text-sm font-semibold text-fix-heading">Featured items</div>
               <p className="mt-2 text-sm leading-relaxed text-fix-text-muted">
                 A small, curated set of hero products or kits for this shop.
               </p>
@@ -180,15 +113,13 @@ export default function ShopPage({ params }: { params: { slug: string } }) {
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <div className="text-sm font-semibold text-fix-heading">
-                          {item.name}
-                        </div>
-                        <div className="mt-1 text-sm text-fix-text-muted">
-                          {item.summary}
-                        </div>
+                        <div className="text-sm font-semibold text-fix-heading">{item.name}</div>
+                        <div className="mt-1 text-sm text-fix-text-muted">{item.summary}</div>
                       </div>
                       {item.badge ? (
-                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getShopEmphasisClasses(shop.slug).badge}`}>
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getShopEmphasisClasses(shopKey).badge}`}
+                        >
                           {item.badge}
                         </span>
                       ) : null}
@@ -202,21 +133,15 @@ export default function ShopPage({ params }: { params: { slug: string } }) {
           {features.length > 0 ? (
             <div className="mt-8">
               <Card className="p-6">
-                <div className="text-sm font-semibold text-fix-heading">
-                  Next up
-                </div>
+                <div className="text-sm font-semibold text-fix-heading">Next up</div>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   {features.map((f) => (
                     <div
                       key={f.title}
                       className="rounded-2xl border border-fix-border/15 bg-fix-surface p-4"
                     >
-                      <div className="text-sm font-semibold text-fix-heading">
-                        {f.title}
-                      </div>
-                      <div className="mt-1 text-sm text-fix-text-muted">
-                        {f.description}
-                      </div>
+                      <div className="text-sm font-semibold text-fix-heading">{f.title}</div>
+                      <div className="mt-1 text-sm text-fix-text-muted">{f.description}</div>
                       <div className="mt-3">
                         <ButtonLink href={f.href} variant="ghost" size="sm">
                           {f.cta}
@@ -233,4 +158,3 @@ export default function ShopPage({ params }: { params: { slug: string } }) {
     </div>
   );
 }
-

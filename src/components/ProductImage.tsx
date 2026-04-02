@@ -6,6 +6,8 @@ import { getProductImageUrls } from "@/lib/productImage";
 type Props = {
   shop: string;
   productId: string;
+  /** When set (e.g. admin-uploaded catalog URL), uses this instead of /images/shops/... paths. */
+  src?: string | null;
   alt?: string;
   placeholderText?: string;
   className?: string;
@@ -18,13 +20,16 @@ type Props = {
 export function ProductImage({
   shop,
   productId,
+  src: directSrc,
   alt = "",
   placeholderText = "Product",
   className = "",
   imgClassName = "",
   fit = "cover",
 }: Props) {
-  const urls = getProductImageUrls(shop, productId);
+  const urls = directSrc?.trim()
+    ? [directSrc.trim()]
+    : getProductImageUrls(shop, productId);
   const [attempt, setAttempt] = useState(0);
   const failed = attempt >= urls.length;
 

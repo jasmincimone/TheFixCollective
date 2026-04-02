@@ -240,3 +240,50 @@ model OrderItem {
   @@index([orderId])
   @@index([listingId])
 }
+
+/// Admin-editable storefront shop landing (four platform shops). Null fields fall back to code defaults.
+model ShopPage {
+  id                  String   @id @default(cuid())
+  /// urban-roots | self-care | stitch | survival-kits
+  shopSlug            String   @unique
+  /// Overrides SHOPS[].name when set
+  name                String?
+  tagline             String?
+  description         String?
+  /// Replaces SHOP_CONTENT categories when set (JSON array of { id, name, description })
+  categoriesJson      Json?
+  /// Replaces SHOP_CONTENT featured when set (JSON array of { id, name, summary, badge? })
+  featuredJson        Json?
+  /// Replaces default “Next up” feature cards (JSON array of { title, description, href, cta })
+  featureSectionsJson Json?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+/// Admin-editable catalog products per platform shop (merges with seed data in src/data/products.ts).
+model ShopCatalogListing {
+  id                  String   @id @default(cuid())
+  shopSlug            String
+  name                String
+  summary             String
+  description         String
+  priceCents          Int
+  /// physical | digital
+  type                String
+  categoryId          String
+  imageUrl            String?
+  /// cover | contain
+  imageFit            String?
+  badge               String?
+  format              String?
+  /// JSON array matching ProductOption[] in types/product.ts
+  optionsJson         String?
+  stripePaymentLink   String?
+  /// DRAFT | PUBLISHED | ARCHIVED (see LISTING_STATUS)
+  status              String   @default("DRAFT")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([shopSlug])
+  @@index([shopSlug, status])
+}

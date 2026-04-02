@@ -1,0 +1,201 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { FormFeedback } from "@/components/ui/FormFeedback";
+
+type FormState = {
+  name: string;
+  tagline: string;
+  description: string;
+  categoriesJson: string;
+  featuredJson: string;
+  featureSectionsJson: string;
+};
+
+export function AdminShopPageEditor({
+  shopSlug,
+  shopName,
+}: {
+  shopSlug: string;
+  shopName: string;
+}) {
+  const [form, setForm] = useState<FormState | null>(null);
+  const [hasSaved, setHasSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/shops/${shopSlug}/page`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to load");
+      setForm(data.form);
+      setHasSaved(!!data.hasSavedOverrides);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error");
+    } finally {
+      setLoading(false);
+    }
+  }, [shopSlug]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form) return;
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch(`/api/admin/shops/${shopSlug}/page`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          tagline: form.tagline,
+          description: form.description,
+          categoriesJson: form.categoriesJson,
+          featuredJson: form.featuredJson,
+          featureSectionsJson: form.featureSectionsJson,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Save failed");
+      setSuccess("Saved.");
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function resetToDefaults() {
+    if (!confirm("Remove all custom content for this shop and revert to built-in defaults?")) return;
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch(`/api/admin/shops/${shopSlug}/page`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reset: true }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Reset failed");
+      setSuccess("Reverted to defaults.");
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading || !form) {
+    return (
+      <Card className="p-6">
+        <p className="text-sm text-fix-text-muted">Loading shop page…</p>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="p-6">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-fix-heading">Shop landing page</h2>
+          <p className="mt-1 text-sm text-fix-text-muted">
+            {shopName} — public page at{" "}
+            <a className="text-fix-link hover:text-fix-link-hover" href={`/shops/${shopSlug}`}>
+              /shops/{shopSlug}
+            </a>
+          </p>
+          {hasSaved ? (
+            <p className="mt-1 text-xs text-fix-text-muted">Custom overrides are active.</p>
+          ) : (
+            <p className="mt-1 text-xs text-fix-text-muted">Using built-in defaults until you save changes.</p>
+          )}
+        </div>
+        <Button type="button" variant="secondary" size="sm" disabled={saving} onClick={resetToDefaults}>
+          Revert to defaults
+        </Button>
+      </div>
+
+      <form onSubmit={save} className="space-y-4">
+        <FormFeedback success={success} error={error} />
+        <div>
+          <label className="block text-sm font-medium text-fix-text">Shop name</label>
+          <input
+            value={form.name}
+            onChange={(e) => setForm((f) => (f ? { ...f, name: e.target.value } : f))}
+            className="mt-1 w-full rounded-lg border border-fix-border/20 bg-fix-surface px-3 py-2 text-sm text-fix-text"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-fix-text">Tagline</label>
+          <input
+            value={form.tagline}
+            onChange={(e) => setForm((f) => (f ? { ...f, tagline: e.target.value } : f))}
+            className="mt-1 w-full rounded-lg border border-fix-border/20 bg-fix-surface px-3 py-2 text-sm text-fix-text"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-fix-text">Description</label>
+          <textarea
+            rows={4}
+            value={form.description}
+            onChange={(e) => setForm((f) => (f ? { ...f, description: e.target.value } : f))}
+            className="mt-1 w-full rounded-lg border border-fix-border/20 bg-fix-surface px-3 py-2 text-sm text-fix-text"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-fix-text">Categories (JSON)</label>
+          <textarea
+            rows={8}
+            value={form.categoriesJson}
+            onChange={(e) => setForm((f) => (f ? { ...f, categoriesJson: e.target.value } : f))}
+            className="mt-1 w-full rounded-lg border border-fix-border/20 bg-fix-surface px-3 py-2 font-mono text-xs text-fix-text"
+          />
+          <p className="mt-1 text-xs text-fix-text-muted">
+            Array of objects with id, name, and description.
+          </p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-fix-text">Featured items (JSON)</label>
+          <textarea
+            rows={8}
+            value={form.featuredJson}
+            onChange={(e) => setForm((f) => (f ? { ...f, featuredJson: e.target.value } : f))}
+            className="mt-1 w-full rounded-lg border border-fix-border/20 bg-fix-surface px-3 py-2 font-mono text-xs text-fix-text"
+          />
+          <p className="mt-1 text-xs text-fix-text-muted">Array of objects with id, name, summary, optional badge.</p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-fix-text">Next up cards (JSON)</label>
+          <textarea
+            rows={8}
+            value={form.featureSectionsJson}
+            onChange={(e) => setForm((f) => (f ? { ...f, featureSectionsJson: e.target.value } : f))}
+            className="mt-1 w-full rounded-lg border border-fix-border/20 bg-fix-surface px-3 py-2 font-mono text-xs text-fix-text"
+          />
+          <p className="mt-1 text-xs text-fix-text-muted">
+            Array of objects with title, description, href, cta.
+          </p>
+        </div>
+        <Button type="submit" variant="cta" size="sm" disabled={saving}>
+          {saving ? "Saving…" : "Save shop page"}
+        </Button>
+      </form>
+    </Card>
+  );
+}

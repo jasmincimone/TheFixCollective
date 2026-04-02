@@ -22,6 +22,7 @@ export function ProductCard({ product }: { product: Product }) {
         <ProductImage
           shop={product.shop}
           productId={product.id}
+          src={product.image}
           fit={product.imageFit ?? "cover"}
           placeholderText={product.type === "digital" ? "Digital" : "Product"}
           className="h-full w-full"

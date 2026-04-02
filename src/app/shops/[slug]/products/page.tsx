@@ -1,26 +1,32 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 import { Container } from "@/components/Container";
 import { Card } from "@/components/ui/Card";
 import { ButtonLink } from "@/components/ui/Button";
 import { ProductCard } from "@/components/ProductCard";
 import { getShop } from "@/config/shops";
-import { getProductsByShop } from "@/data/products";
+import { loadMergedShopDisplay } from "@/lib/shopPageDisplay";
+import { getMergedProductsByShopForPublic } from "@/lib/shopCatalog";
 import type { ProductType } from "@/types/product";
 
-export function generateMetadata({ params }: { params: { slug: string } }) {
+export async function generateMetadata({ params }: { params: { slug: string } }) {
   const shop = getShop(params.slug);
   if (!shop) return {};
+  const display = await loadMergedShopDisplay(params.slug);
+  const name = display?.name ?? shop.name;
+  const tagline = display?.tagline ?? shop.tagline;
   return {
-    title: `Products • ${shop.name}`,
-    description: `Shop ${shop.name} — ${shop.tagline}`,
+    title: `Products • ${name}`,
+    description: `Shop ${name} — ${tagline}`,
   };
 }
 
 type SearchParams = { type?: string };
 
-export default function ShopProductsPage({
+export default async function ShopProductsPage({
   params,
   searchParams,
 }: {
@@ -30,11 +36,15 @@ export default function ShopProductsPage({
   const shop = getShop(params.slug);
   if (!shop) notFound();
 
+  const display = await loadMergedShopDisplay(params.slug);
+  const shopTitle = display?.name ?? shop.name;
+  const shopTagline = display?.tagline ?? shop.tagline;
+
   const typeFilter = (searchParams?.type === "physical" || searchParams?.type === "digital"
     ? searchParams.type
     : undefined) as ProductType | undefined;
 
-  const allProducts = getProductsByShop(shop.slug);
+  const allProducts = await getMergedProductsByShopForPublic(shop.slug);
   const products = typeFilter
     ? allProducts.filter((p) => p.type === typeFilter)
     : allProducts;
@@ -53,15 +63,15 @@ export default function ShopProductsPage({
                 </Link>
                 <span className="mx-2">/</span>
                 <Link href={`/shops/${shop.slug}`} className="text-fix-link hover:text-fix-link-hover">
-                  {shop.name}
+                  {shopTitle}
                 </Link>
                 <span className="mx-2">/</span>
                 <span className="text-fix-heading">Products</span>
               </nav>
               <h1 className="mt-2 text-2xl font-semibold tracking-tight text-fix-heading sm:text-3xl">
-                {shop.name}
+                {shopTitle}
               </h1>
-              <p className="mt-1 text-fix-text-muted">{shop.tagline}</p>
+              <p className="mt-1 text-fix-text-muted">{shopTagline}</p>
             </div>
             <ButtonLink href={`/shops/${shop.slug}`} variant="secondary" size="sm">
               Back to shop
@@ -77,7 +87,7 @@ export default function ShopProductsPage({
               <p className="text-fix-text-muted">No products in this shop yet.</p>
               <div className="mt-4">
                 <ButtonLink href={`/shops/${shop.slug}`} variant="secondary" size="sm">
-                  Back to {shop.name}
+                  Back to {shopTitle}
                 </ButtonLink>
               </div>
             </Card>

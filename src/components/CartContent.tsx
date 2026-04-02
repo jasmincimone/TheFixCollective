@@ -3,7 +3,6 @@
 import Link from "next/link";
 
 import { useCart } from "@/context/CartContext";
-import { getProduct } from "@/data/products";
 import { formatPrice } from "@/lib/format";
 import { ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -12,11 +11,11 @@ import { ProductImage } from "@/components/ProductImage";
 const SHIPPING_CENTS = 599;
 
 export function CartContent() {
-  const { items, updateQuantity, removeItem, itemCount } = useCart();
+  const { items, updateQuantity, removeItem, itemCount, resolveProduct } = useCart();
 
   const lineItems = items
     .map((item) => {
-      const product = getProduct(item.productId);
+      const product = resolveProduct(item.productId);
       if (!product) return null;
       const selections = item.selections ?? {};
       const selectionLabels = (product.options ?? [])
@@ -80,6 +79,7 @@ export function CartContent() {
                   <ProductImage
                     shop={product.shop}
                     productId={product.id}
+                    src={product.image}
                     alt=""
                     fit={product.imageFit ?? "cover"}
                     placeholderText={product.type === "digital" ? "Digital" : "Product"}

@@ -81,27 +81,41 @@ export async function POST(request: NextRequest) {
       include: { vendorProfile: true },
     });
 
-    if (!user?.vendorProfile) {
+    if (!user) {
       return NextResponse.json(
         {
-          error: "No vendor profile on this account.",
-          hint: "Complete the vendor application from your account dashboard first.",
-          code: "NO_VENDOR_PROFILE",
+          error: "Account not found.",
+          code: "NO_USER",
         },
         { status: 403 }
       );
     }
 
-    if (user.vendorProfile.status !== VENDOR_STATUS.APPROVED) {
-      return NextResponse.json(
-        {
-          error: `Vendor status is "${user.vendorProfile.status}", not approved yet.`,
-          hint: "Wait for an admin to approve your vendor application, then try again.",
-          code: "VENDOR_NOT_APPROVED",
-          details: { vendorStatus: user.vendorProfile.status },
-        },
-        { status: 403 }
-      );
+    const isAdminUser = user.role === ROLES.ADMIN;
+
+    if (!isAdminUser) {
+      if (!user.vendorProfile) {
+        return NextResponse.json(
+          {
+            error: "No vendor profile on this account.",
+            hint: "Complete the vendor application from your account dashboard first.",
+            code: "NO_VENDOR_PROFILE",
+          },
+          { status: 403 }
+        );
+      }
+
+      if (user.vendorProfile.status !== VENDOR_STATUS.APPROVED) {
+        return NextResponse.json(
+          {
+            error: `Vendor status is "${user.vendorProfile.status}", not approved yet.`,
+            hint: "Wait for an admin to approve your vendor application, then try again.",
+            code: "VENDOR_NOT_APPROVED",
+            details: { vendorStatus: user.vendorProfile.status },
+          },
+          { status: 403 }
+        );
+      }
     }
 
     const canUpload =

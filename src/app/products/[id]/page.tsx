@@ -7,13 +7,13 @@ import { BuyNowLink } from "@/components/BuyNowLink";
 import { ProductImage } from "@/components/ProductImage";
 import { ButtonLink } from "@/components/ui/Button";
 import { getShop } from "@/config/shops";
-import { getProduct } from "@/data/products";
 import { formatPrice } from "@/lib/format";
 import { getStripePaymentLink } from "@/lib/paymentLinks";
+import { getMergedProductForPublic } from "@/lib/shopCatalog";
 import { ProductSeedChoice } from "@/components/ProductSeedChoice";
 
-export function generateMetadata({ params }: { params: { id: string } }) {
-  const product = getProduct(params.id);
+export async function generateMetadata({ params }: { params: { id: string } }) {
+  const product = await getMergedProductForPublic(params.id);
   if (!product) return {};
   return {
     title: product.name,
@@ -21,8 +21,8 @@ export function generateMetadata({ params }: { params: { id: string } }) {
   };
 }
 
-export default function ProductPage({ params }: { params: { id: string } }) {
-  const product = getProduct(params.id);
+export default async function ProductPage({ params }: { params: { id: string } }) {
+  const product = await getMergedProductForPublic(params.id);
   if (!product) notFound();
 
   const shop = getShop(product.shop);
@@ -62,6 +62,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
               <ProductImage
                 shop={product.shop}
                 productId={product.id}
+                src={product.image}
                 fit={product.imageFit ?? "cover"}
                 placeholderText={product.type === "digital" ? "Digital product" : "Product image"}
                 className="h-full w-full rounded-2xl"
