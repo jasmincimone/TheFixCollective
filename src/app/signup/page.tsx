@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -8,9 +8,11 @@ import { Container } from "@/components/Container";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { FormFeedback } from "@/components/ui/FormFeedback";
+import { LegalConsentModal } from "@/components/LegalConsentModal";
 
 export default function SignupPage() {
   const router = useRouter();
+  const [legalStepDone, setLegalStepDone] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -37,6 +39,8 @@ export default function SignupPage() {
           email: email.trim(),
           password,
           name: name.trim() || undefined,
+          agreeTerms: true,
+          agreePrivacy: true,
           agreeSmsTwoFactorTerms: true,
           marketingOptIn,
         }),
@@ -59,14 +63,37 @@ export default function SignupPage() {
     }
   };
 
+  const handleDeclineLegal = useCallback(() => {
+    router.push("/");
+  }, [router]);
+
   return (
     <Container className="py-12 sm:py-16">
+      <LegalConsentModal
+        open={!legalStepDone}
+        onAccept={() => setLegalStepDone(true)}
+        onDecline={handleDeclineLegal}
+      />
       <div className="mx-auto max-w-md">
         <h1 className="text-2xl font-semibold tracking-tight text-fix-heading">Create account</h1>
         <p className="mt-1 text-sm text-fix-text-muted">
           Create an account to view order history and download digital purchases. You can add a phone number later in
           Account Settings to use SMS verification and SMS two-factor.
         </p>
+        {!legalStepDone ? (
+          <div className="mt-6 space-y-4">
+            <p className="text-sm text-fix-text-muted">
+              Use the pop-up to review and agree to our Terms &amp; Conditions and Privacy Policy first.
+            </p>
+            <p className="text-center text-sm text-fix-text-muted">
+              Already have an account?{" "}
+              <Link href="/login" className="text-fix-link hover:text-fix-link-hover">
+                Sign in
+              </Link>
+            </p>
+          </div>
+        ) : null}
+        {legalStepDone ? (
         <Card className="mt-6 p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <FormFeedback success={success || null} error={error || null} />
@@ -172,7 +199,9 @@ export default function SignupPage() {
             </Link>
           </p>
         </Card>
+        ) : null}
       </div>
     </Container>
   );
 }
+

@@ -37,15 +37,25 @@ function prismaErrorMessage(e: unknown): string | null {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password, name, agreeSmsTwoFactorTerms, marketingOptIn } = body as {
+    const { email, password, name, agreeSmsTwoFactorTerms, marketingOptIn, agreeTerms, agreePrivacy } = body as {
       email?: string;
       password?: string;
       name?: string;
       agreeSmsTwoFactorTerms?: unknown;
       marketingOptIn?: unknown;
+      agreeTerms?: unknown;
+      agreePrivacy?: unknown;
     };
     if (!email?.trim() || !password) {
       return NextResponse.json({ error: "Email and password required" }, { status: 400 });
+    }
+    if (agreeTerms !== true || agreePrivacy !== true) {
+      return NextResponse.json(
+        {
+          error: "You must agree to the Terms & Conditions and Privacy Policy to create an account.",
+        },
+        { status: 400 }
+      );
     }
     if (agreeSmsTwoFactorTerms !== true) {
       return NextResponse.json(
@@ -63,15 +73,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "An account with this email already exists" }, { status: 400 });
     }
     const passwordHash = hashPassword(password);
+    const now = new Date();
     await prisma.user.create({
       data: {
         email: emailNorm,
         passwordHash,
         name: name?.trim() || null,
         role: ROLES.CUSTOMER,
-        smsTwoFactorSignupConsentAt: new Date(),
+        termsAcceptedAt: now,
+        privacyAcceptedAt: now,
+        smsTwoFactorSignupConsentAt: now,
         marketingOptIn: marketing,
-        marketingOptInAt: marketing ? new Date() : null,
+        marketingOptInAt: marketing ? now : null,
       },
     });
     return NextResponse.json({ ok: true });
