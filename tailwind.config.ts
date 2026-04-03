@@ -39,7 +39,13 @@ const config: Config = {
         soft: "0 10px 30px rgba(52, 42, 15, 0.08)",
         "focus-ring": "0 0 0 2px var(--focus-ring)",
       },
+      borderColor: {
+        /** Match message panel / inputs (`border-fix-border/20` feel) when `border` has no color token. */
+        DEFAULT: "rgb(52 42 15 / 0.2)",
+      },
       ringColor: {
+        /** Tailwind’s built-in default ring is blue; use espresso so stray rings match the UI. */
+        DEFAULT: fixTokens.espresso,
         fix: "var(--focus-ring)",
       },
     },

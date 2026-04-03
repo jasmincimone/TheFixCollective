@@ -3,6 +3,7 @@ import { CommunityPostRoleBadge } from "@/components/CommunityPostRoleBadge";
 import { Container } from "@/components/Container";
 import { CommunityPostForm } from "@/components/CommunityPostForm";
 import { MessageUserLink } from "@/components/MessageUserLink";
+import { PlatformIllustrationBanner } from "@/components/PlatformIllustrationBanner";
 import { Card } from "@/components/ui/Card";
 import { formatCommunityDate, formatCommunityDateTime } from "@/lib/formatCommunityDate";
 import { prisma } from "@/lib/prisma";
@@ -39,7 +40,7 @@ export default async function CommunityPage() {
 
   return (
     <Container className="py-12 sm:py-16">
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto mb-6 max-w-3xl">
         <h1 className="text-3xl font-semibold tracking-tight text-fix-heading sm:text-4xl">
           Community
         </h1>
@@ -48,20 +49,13 @@ export default async function CommunityPage() {
         </p>
       </div>
 
-      <div className="mx-auto mt-8 w-full max-w-4xl sm:mt-10">
-        <div className="overflow-hidden rounded-2xl bg-fix-bg-muted ring-1 ring-fix-border/15 shadow-soft">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/images/platform/community/farm-illustration.png"
-            alt="Flat illustration of a diverse community farming, gardening, making pottery, and woodworking together, with a barn, farmhouse, and a sign that reads Grown made together."
-            width={1024}
-            height={511}
-            className="block h-auto w-full object-contain object-center"
-            loading="lazy"
-            decoding="async"
-          />
-        </div>
-      </div>
+      <PlatformIllustrationBanner
+        src="/images/platform/community/farm-illustration.png"
+        alt="Flat illustration of a diverse community farming, gardening, making pottery, and woodworking together, with a barn, farmhouse, and a sign that reads Grown made together."
+        width={1024}
+        height={511}
+        className="mx-auto mb-8 max-w-md"
+      />
 
       <div className="mx-auto mt-10 max-w-3xl space-y-8">
         <CommunityPostForm />

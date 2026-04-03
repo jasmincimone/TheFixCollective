@@ -49,6 +49,8 @@ body {
 body {
   color: var(--text);
   background: var(--bg);
+  /* Checkbox, radio, range — browser default is often blue */
+  accent-color: var(--espresso);
 }
 
 * {
