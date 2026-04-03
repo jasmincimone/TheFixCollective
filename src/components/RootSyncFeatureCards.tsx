@@ -33,13 +33,13 @@ export function RootSyncFeatureCards() {
     : null;
 
   return (
-    <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div className="mt-8 w-full min-w-0">
       {active ? (
         <button
           type="button"
           className={cn(
             cardBase,
-            "col-span-1 flex w-full flex-col items-center justify-center px-6 py-8 text-center sm:col-span-3 sm:aspect-[3/1] max-sm:aspect-[1/3] max-sm:min-h-0",
+            "flex w-full min-w-0 flex-col items-center justify-center px-4 py-6 text-center sm:px-6 sm:py-8 sm:aspect-[3/1]",
           )}
           onClick={() => setOpenId(null)}
           aria-expanded
@@ -52,22 +52,28 @@ export function RootSyncFeatureCards() {
           </p>
         </button>
       ) : (
-        FEATURES.map((f) => (
-          <button
-            key={f.id}
-            type="button"
-            className={cn(
-              cardBase,
-              "flex aspect-square w-full items-center justify-center px-4 py-6 text-center",
-            )}
-            onClick={() => setOpenId(f.id)}
-            aria-expanded={false}
-          >
-            <span className="text-sm font-semibold text-fix-heading">
-              {f.title}
-            </span>
-          </button>
-        ))
+        <div
+          className="flex w-full min-w-0 flex-row gap-2 sm:gap-4"
+          role="group"
+          aria-label="RootSync features"
+        >
+          {FEATURES.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              className={cn(
+                cardBase,
+                "flex aspect-square min-h-0 min-w-0 flex-1 flex-col items-center justify-center overflow-hidden px-1 py-2 text-center sm:px-4 sm:py-6",
+              )}
+              onClick={() => setOpenId(f.id)}
+              aria-expanded={false}
+            >
+              <span className="line-clamp-4 text-[10px] font-semibold leading-tight text-fix-heading sm:text-sm sm:leading-snug">
+                {f.title}
+              </span>
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );

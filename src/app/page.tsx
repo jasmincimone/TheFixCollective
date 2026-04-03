@@ -24,9 +24,12 @@ export default function HomePage() {
                 when it comes to the highest level of self-love, self-care, and
                 self-expression.
               </p>
-              <div className="mt-8">
-                <ButtonLink href="/shops" variant="cta" size="lg" className="uppercase tracking-wide">
-                  Learn more
+              <div className="mt-8 flex w-full max-w-xs flex-col gap-3">
+                <ButtonLink href="/about" variant="cta" size="lg" className="uppercase tracking-wide">
+                  About us
+                </ButtonLink>
+                <ButtonLink href="/signup" variant="secondary" size="lg" className="uppercase tracking-wide">
+                  Sign up
                 </ButtonLink>
               </div>
             </div>
