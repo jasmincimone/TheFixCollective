@@ -32,14 +32,14 @@ export default function RootSyncPage() {
         </div>
       </div>
 
-      <div className="mx-auto mt-10 max-w-md sm:mt-12">
+      <div className="mx-auto mt-10 max-w-56 sm:mt-12">
         <Image
           src="/images/platform/rootsync/hero-mark.png"
           alt="RootSync AI illustration: growth, food, and connection"
-          width={800}
-          height={800}
+          width={400}
+          height={400}
           className="h-auto w-full rounded-2xl object-contain shadow-soft"
-          sizes="(max-width: 768px) 100vw, 28rem"
+          sizes="(max-width: 768px) 100vw, 14rem"
           priority
         />
       </div>

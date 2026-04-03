@@ -48,14 +48,14 @@ export default async function CommunityPage() {
         </p>
       </div>
 
-      <div className="mx-auto mt-8 w-full max-w-lg sm:mt-10">
+      <div className="mx-auto mt-8 w-full max-w-4xl sm:mt-10">
         <div className="overflow-hidden rounded-2xl bg-fix-bg-muted ring-1 ring-fix-border/15 shadow-soft">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/images/platform/community/farm-illustration.png"
-            alt="Stylized illustration of a farm with a house, barn, windmill, and tractor."
-            width={800}
-            height={800}
+            alt="Flat illustration of a diverse community farming, gardening, making pottery, and woodworking together, with a barn, farmhouse, and a sign that reads Grown made together."
+            width={1024}
+            height={511}
             className="block h-auto w-full object-contain object-center"
             loading="lazy"
             decoding="async"

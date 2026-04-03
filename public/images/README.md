@@ -66,7 +66,7 @@ Images for each **platform** landing page (Community, Marketplace, Courses, etc.
 | `messages`    | Messages   |
 | `rootsync`    | RootSync   |
 
-**Example:** `/images/platform/community/hero.jpg`
+**Example:** `/images/platform/community/farm-illustration.png` (Community page); `/images/platform/messages/community-connect.png` (Messages inbox)
 
 ---
 

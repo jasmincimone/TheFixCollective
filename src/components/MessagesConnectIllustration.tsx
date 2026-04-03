@@ -1,7 +1,7 @@
 import { cn } from "@/lib/cn";
 
 /**
- * Shared landscape illustration for the messages inbox (community + mobile messaging theme).
+ * Messages inbox banner—community + mobile messaging theme (separate from Community page art).
  */
 export function MessagesConnectIllustration({ className }: { className?: string }) {
   return (
@@ -11,8 +11,8 @@ export function MessagesConnectIllustration({ className }: { className?: string 
         <img
           src="/images/platform/messages/community-connect.png"
           alt="Illustration of people connecting on phones near a barn, windmill, and house—community messaging."
-          width={1200}
-          height={600}
+          width={1024}
+          height={511}
           className="block h-auto w-full object-contain object-center"
           loading="lazy"
           decoding="async"

@@ -33,7 +33,7 @@ export default function MessagesInboxPage({
         </p>
       </div>
 
-      <MessagesConnectIllustration className="mx-auto mb-8 max-w-4xl" />
+      <MessagesConnectIllustration className="mx-auto mb-8 max-w-md" />
 
       <VendorMessenger
         vendorProfileIdFromUrl={vendorProfileIdFromUrl}
