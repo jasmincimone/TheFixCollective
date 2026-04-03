@@ -19,7 +19,6 @@ export default function RootSyncPage() {
             width={72}
             height={72}
             className="h-16 w-16 shrink-0 rounded-full object-cover sm:h-[72px] sm:w-[72px]"
-            priority
           />
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-fix-heading sm:text-4xl">
@@ -31,6 +30,18 @@ export default function RootSyncPage() {
             </p>
           </div>
         </div>
+      </div>
+
+      <div className="mx-auto mt-10 max-w-md sm:mt-12">
+        <Image
+          src="/images/platform/rootsync/hero-mark.png"
+          alt="RootSync AI illustration: growth, food, and connection"
+          width={800}
+          height={800}
+          className="h-auto w-full rounded-2xl object-contain shadow-soft"
+          sizes="(max-width: 768px) 100vw, 28rem"
+          priority
+        />
       </div>
 
       <RootSyncFeatureCards />

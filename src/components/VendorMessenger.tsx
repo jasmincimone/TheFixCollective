@@ -301,7 +301,7 @@ export function VendorMessenger({
         <p className="mt-2 text-sm text-fix-text-muted">
           Chat with vendors, community members, and others you connect with on The Fix Collective.
         </p>
-        <ButtonLink href="/login?callbackUrl=%2Fmessages" variant="cta" size="md" className="mt-6">
+        <ButtonLink href="/login?callbackUrl=%2Fmessages%2Finbox" variant="cta" size="md" className="mt-6">
           Sign in
         </ButtonLink>
       </div>

@@ -48,6 +48,21 @@ export default async function CommunityPage() {
         </p>
       </div>
 
+      <div className="mx-auto mt-8 w-full max-w-lg sm:mt-10">
+        <div className="overflow-hidden rounded-2xl bg-fix-bg-muted ring-1 ring-fix-border/15 shadow-soft">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/platform/community/farm-illustration.png"
+            alt="Stylized illustration of a farm with a house, barn, windmill, and tractor."
+            width={800}
+            height={800}
+            className="block h-auto w-full object-contain object-center"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+      </div>
+
       <div className="mx-auto mt-10 max-w-3xl space-y-8">
         <CommunityPostForm />
 

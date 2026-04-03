@@ -16,7 +16,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: "https://thefixcollective.com/marketplace", lastModified: now },
     { url: "https://thefixcollective.com/courses", lastModified: now },
     { url: "https://thefixcollective.com/downloads", lastModified: now },
-    { url: "https://thefixcollective.com/messages", lastModified: now },
+    { url: "https://thefixcollective.com/messages/inbox", lastModified: now },
     { url: "https://thefixcollective.com/rootsync", lastModified: now }
   ];
 }

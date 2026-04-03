@@ -1,4 +1,5 @@
 import { Container } from "@/components/Container";
+import { MessagesConnectIllustration } from "@/components/MessagesConnectIllustration";
 import { VendorMessenger } from "@/components/VendorMessenger";
 
 export const metadata = {
@@ -31,6 +32,8 @@ export default function MessagesInboxPage({
           private unless you already have a thread.
         </p>
       </div>
+
+      <MessagesConnectIllustration className="mx-auto mb-8 max-w-4xl" />
 
       <VendorMessenger
         vendorProfileIdFromUrl={vendorProfileIdFromUrl}

@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Leaf } from "lucide-react";
 
@@ -8,12 +7,17 @@ import { ButtonLink } from "@/components/ui/Button";
 import { ShopLogo } from "@/components/ShopLogo";
 import { SHOPS } from "@/config/shops";
 
+/** Avoid stale cached HTML if a CDN or older build served the previous two-column hero. */
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default function HomePage() {
   return (
     <div>
       <section className="border-b border-fix-border/15 bg-fix-bg-muted/40">
         <Container className="py-14 sm:py-20">
-          <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
+          {/* Single-column landing funnel (never a side-by-side hero + shops grid). */}
+          <div className="mx-auto flex w-full min-w-0 max-w-2xl flex-col items-center text-center">
             <h1 className="text-3xl font-bold tracking-tight text-fix-heading sm:text-4xl md:text-5xl">
               Let&apos;s Grow Something!
             </h1>
@@ -34,20 +38,22 @@ export default function HomePage() {
           </div>
 
           <div className="mx-auto mt-12 w-full max-w-lg sm:mt-14">
-            <div className="relative overflow-hidden rounded-2xl bg-fix-surface ring-1 ring-fix-border/15 shadow-soft">
-              <Image
+            <div className="overflow-hidden rounded-2xl bg-fix-surface ring-1 ring-fix-border/15 shadow-soft">
+              {/* Plain img: always serves from /public; avoids next/image optimizer quirks in some dev setups. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src="/images/home/hero-product-lineup.png"
                 alt="THE FIX SELF-CARE CO. products—teas, soaps, balms, and survival kits—arranged on a rustic wooden table with soft leaf shadows."
                 width={1200}
                 height={1800}
-                className="h-auto w-full object-cover"
-                sizes="(max-width: 768px) 100vw, 512px"
-                priority
+                className="block h-auto w-full object-cover"
+                fetchPriority="high"
+                decoding="async"
               />
             </div>
           </div>
 
-          <div className="mx-auto mt-14 max-w-4xl overflow-hidden rounded-2xl bg-espresso shadow-soft ring-1 ring-fix-border/10 sm:mt-16">
+          <div className="mx-auto mt-14 w-full min-w-0 max-w-4xl overflow-hidden rounded-2xl bg-espresso shadow-soft ring-1 ring-fix-border/10 sm:mt-16">
             <div className="flex flex-col items-center px-6 py-10 text-clay sm:py-12">
               <span className="inline-flex h-14 w-14 items-center justify-center rounded-full border-2 border-gold/60">
                 <Leaf className="h-8 w-8 text-gold" aria-hidden />
@@ -90,15 +96,6 @@ export default function HomePage() {
       <section>
         <Container className="py-12 sm:py-16">
           <div className="mx-auto grid max-w-4xl gap-6 sm:grid-cols-2">
-            <Card className="p-6">
-              <div className="text-sm font-semibold text-fix-heading">
-                Community-ready
-              </div>
-              <p className="mt-2 text-sm leading-relaxed text-fix-text-muted">
-                Structured routes for messaging, marketplace, and community features,
-                with clear placeholders you can progressively enhance.
-              </p>
-            </Card>
             <Card className="p-6">
               <div className="text-sm font-semibold text-fix-heading">
                 RootSync (AI)

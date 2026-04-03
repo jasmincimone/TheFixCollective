@@ -39,7 +39,7 @@ export function AccountNav() {
     { href: "/account/settings", label: "Settings", show: true },
     { href: "/account/orders", label: "Order history", show: true },
     { href: "/account/community", label: "Community", show: true },
-    { href: "/messages", label: "Messages", show: true },
+    { href: "/messages/inbox", label: "Messages", show: true },
     {
       href: "/account/vendor/apply",
       label: "Become a vendor",

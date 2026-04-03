@@ -39,7 +39,7 @@ export default async function AccountPage() {
             Chat with marketplace vendors or reply to customers from your inbox.
           </p>
           <div className="mt-4">
-            <ButtonLink href="/messages" variant="secondary" size="sm">
+            <ButtonLink href="/messages/inbox" variant="secondary" size="sm">
               Open messages
             </ButtonLink>
           </div>
