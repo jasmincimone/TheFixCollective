@@ -9,7 +9,6 @@ import {
   useEffect,
 } from "react";
 
-import { getProduct as getStaticProduct } from "@/data/products";
 import type { CartItem } from "@/types/product";
 import type { Product } from "@/types/product";
 
@@ -22,7 +21,7 @@ type CartContextValue = {
   updateQuantity: (key: string, quantity: number) => void;
   itemCount: number;
   clearCart: () => void;
-  /** Merged catalog (DB + seed). Falls back to static until the snapshot loads. */
+  /** Published catalog from API; undefined until snapshot loads or if id is unknown. */
   resolveProduct: (productId: string) => Product | undefined;
 };
 
@@ -104,7 +103,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const resolveProduct = useCallback(
-    (productId: string) => catalogById?.get(productId) ?? getStaticProduct(productId),
+    (productId: string) => catalogById?.get(productId),
     [catalogById],
   );
 

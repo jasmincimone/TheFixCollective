@@ -1,4 +1,3 @@
-import { PRODUCTS } from "@/data/products";
 import { prisma } from "@/lib/prisma";
 import { LISTING_STATUS } from "@/lib/roles";
 import type { ShopSlug } from "@/config/shops";
@@ -51,16 +50,11 @@ export function shopListingToProduct(row: {
   };
 }
 
+/** Published catalog product by id, or undefined. */
 export async function getMergedProductForPublic(id: string): Promise<Product | undefined> {
   const row = await prisma.shopCatalogListing.findUnique({ where: { id } });
-  if (row) {
-    if (row.status === LISTING_STATUS.PUBLISHED) {
-      return shopListingToProduct(row);
-    }
-    // Draft / archived: fall back to seed catalog when ids match so built-in products stay visible.
-    return PRODUCTS.find((p) => p.id === id);
-  }
-  return PRODUCTS.find((p) => p.id === id);
+  if (!row || row.status !== LISTING_STATUS.PUBLISHED) return undefined;
+  return shopListingToProduct(row);
 }
 
 /** Checkout and server validation: same rules as public catalog. */
@@ -69,17 +63,11 @@ export async function getMergedProductForCheckout(id: string): Promise<Product |
 }
 
 export async function getMergedProductsByShopForPublic(shop: string): Promise<Product[]> {
-  const staticList = PRODUCTS.filter((p) => p.shop === shop);
   const dbRows = await prisma.shopCatalogListing.findMany({
     where: { shopSlug: shop, status: LISTING_STATUS.PUBLISHED },
+    orderBy: { updatedAt: "desc" },
   });
-  const dbById = new Map(dbRows.map((r) => [r.id, shopListingToProduct(r)]));
-  const mergedStatic = staticList.map((p) => dbById.get(p.id) ?? p);
-  const staticIds = new Set(staticList.map((p) => p.id));
-  const dbOnly = dbRows
-    .filter((r) => !staticIds.has(r.id))
-    .map((r) => shopListingToProduct(r));
-  return [...mergedStatic, ...dbOnly];
+  return dbRows.map((r) => shopListingToProduct(r));
 }
 
 export async function getAllMergedProductsForPublic(): Promise<Product[]> {

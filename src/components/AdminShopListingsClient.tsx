@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { formatPrice } from "@/lib/format";
+import { LISTING_STATUS } from "@/lib/roles";
 
 type DbListing = {
   id: string;
@@ -19,22 +20,18 @@ type DbListing = {
   categoryId: string;
 };
 
-type SeedSummary = {
-  id: string;
-  name: string;
-  summary: string;
-  priceCents: number;
-  type: string;
-  categoryId: string;
-  imageUrl: string | null;
-};
-
-type CatalogItem =
-  | { rowKind: "built-in"; seed: SeedSummary; dbListing: DbListing | null }
-  | { rowKind: "database-only"; dbListing: DbListing };
+function listingBadge(status: string): { label: string; badgeClass: string } {
+  if (status === LISTING_STATUS.PUBLISHED) {
+    return { label: "Published", badgeClass: "bg-forest/15 text-forest" };
+  }
+  if (status === LISTING_STATUS.ARCHIVED) {
+    return { label: "Archived", badgeClass: "bg-fix-border/15 text-fix-text-muted" };
+  }
+  return { label: "Draft", badgeClass: "bg-amber/20 text-espresso" };
+}
 
 export function AdminShopListingsClient({ shopSlug }: { shopSlug: string }) {
-  const [items, setItems] = useState<CatalogItem[]>([]);
+  const [listings, setListings] = useState<DbListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,7 +42,7 @@ export function AdminShopListingsClient({ shopSlug }: { shopSlug: string }) {
       const res = await fetch(`/api/admin/shops/${shopSlug}/listings`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load");
-      setItems(Array.isArray(data.items) ? data.items : []);
+      setListings(Array.isArray(data.listings) ? data.listings : []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error");
     } finally {
@@ -65,10 +62,8 @@ export function AdminShopListingsClient({ shopSlug }: { shopSlug: string }) {
         <div>
           <h2 className="text-lg font-semibold text-fix-heading">Catalog listings</h2>
           <p className="mt-1 text-sm text-fix-text-muted">
-            <strong className="font-medium text-fix-heading">Built-in</strong> rows come from the product
-            seed file in code (what shoppers see by default).{" "}
-            <strong className="font-medium text-fix-heading">Database</strong> rows override or add products
-            when published. Use &quot;Add database row&quot; to create an override with the same product id.
+            Products shown on the storefront come from these database rows. Set status to{" "}
+            <strong className="font-medium text-fix-heading">Published</strong> when ready for shoppers.
           </p>
         </div>
         <ButtonLink href={`${base}/new`} variant="cta" size="sm">
@@ -79,62 +74,25 @@ export function AdminShopListingsClient({ shopSlug }: { shopSlug: string }) {
       {error && <p className="text-sm text-bark">{error}</p>}
       {loading ? (
         <p className="text-sm text-fix-text-muted">Loading…</p>
-      ) : items.length === 0 ? (
+      ) : listings.length === 0 ? (
         <Card className="p-6">
-          <p className="text-sm text-fix-text-muted">No products configured for this shop.</p>
+          <p className="text-sm text-fix-text-muted">No listings yet. Create one to appear in the shop catalog.</p>
         </Card>
       ) : (
         <ul className="space-y-3">
-          {items.map((row) => {
-            if (row.rowKind === "database-only") {
-              const l = row.dbListing;
-              return (
-                <li key={`db-${l.id}`}>
-                  <CatalogRowCard
-                    title={l.name}
-                    meta={`${l.status} • ${l.type} • ${formatPrice(l.priceCents)} • ${l.categoryId}`}
-                    idLine={l.id}
-                    imageUrl={l.imageUrl}
-                    badge="Database only"
-                    badgeClass="bg-forest/15 text-forest"
-                    actionHref={`${base}/${l.id}/edit`}
-                    actionLabel="Edit"
-                  />
-                </li>
-              );
-            }
-
-            const { seed, dbListing } = row;
-            const thumb = dbListing?.imageUrl ?? seed.imageUrl;
-            if (dbListing) {
-              return (
-                <li key={`seed-${seed.id}`}>
-                  <CatalogRowCard
-                    title={dbListing.name}
-                    meta={`${dbListing.status} • ${dbListing.type} • ${formatPrice(dbListing.priceCents)} • ${dbListing.categoryId}`}
-                    idLine={dbListing.id}
-                    imageUrl={thumb}
-                    badge="Overrides built-in"
-                    badgeClass="bg-amber/20 text-espresso"
-                    subNote={`Built-in: ${seed.name}`}
-                    actionHref={`${base}/${dbListing.id}/edit`}
-                    actionLabel="Edit override"
-                  />
-                </li>
-              );
-            }
-
+          {listings.map((l) => {
+            const { label, badgeClass } = listingBadge(l.status);
             return (
-              <li key={`seed-${seed.id}`}>
+              <li key={l.id}>
                 <CatalogRowCard
-                  title={seed.name}
-                  meta={`Built-in • ${seed.type} • ${formatPrice(seed.priceCents)} • ${seed.categoryId}`}
-                  idLine={seed.id}
-                  imageUrl={thumb}
-                  badge="Built-in (code)"
-                  badgeClass="bg-fix-border/15 text-fix-text-muted"
-                  actionHref={`${base}/new?fromSeed=${encodeURIComponent(seed.id)}`}
-                  actionLabel="Add database row"
+                  title={l.name}
+                  meta={`${l.type} • ${formatPrice(l.priceCents)} • ${l.categoryId}`}
+                  idLine={l.id}
+                  imageUrl={l.imageUrl}
+                  badge={label}
+                  badgeClass={badgeClass}
+                  actionHref={`${base}/${l.id}/edit`}
+                  actionLabel="Edit"
                 />
               </li>
             );
@@ -152,7 +110,6 @@ function CatalogRowCard({
   imageUrl,
   badge,
   badgeClass,
-  subNote,
   actionHref,
   actionLabel,
 }: {
@@ -162,7 +119,6 @@ function CatalogRowCard({
   imageUrl: string | null;
   badge: string;
   badgeClass: string;
-  subNote?: string;
   actionHref: string;
   actionLabel: string;
 }) {
@@ -184,7 +140,6 @@ function CatalogRowCard({
           </div>
           <div className="text-xs text-fix-text-muted">{meta}</div>
           <div className="font-mono text-xs text-fix-text-muted">id: {idLine}</div>
-          {subNote ? <div className="text-xs text-fix-text-muted">{subNote}</div> : null}
         </div>
       </div>
       <Link

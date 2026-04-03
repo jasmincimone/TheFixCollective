@@ -1,25 +1,21 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { VendorListingImageField } from "@/components/VendorListingImageField";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { FormFeedback } from "@/components/ui/FormFeedback";
 import { SHOP_CONTENT, type ShopSlug } from "@/config/shops";
-import { getProduct } from "@/data/products";
 import { LISTING_STATUS } from "@/lib/roles";
 
 export function AdminShopCatalogListingForm({
   shopSlug,
   listingId,
-  prefillSeedProductId,
 }: {
   shopSlug: string;
   listingId?: string;
-  /** When creating a row, prefill from built-in seed product (same id = override). */
-  prefillSeedProductId?: string;
 }) {
   const router = useRouter();
   const isEdit = !!listingId;
@@ -45,8 +41,6 @@ export function AdminShopCatalogListingForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
-  const seedPrefillDone = useRef(false);
 
   const backHref = `/account/admin/shops/${shopSlug}`;
 
@@ -84,32 +78,12 @@ export function AdminShopCatalogListingForm({
   }, [isEdit, load]);
 
   useEffect(() => {
-    if (isEdit || seedPrefillDone.current || !prefillSeedProductId) return;
-    const p = getProduct(prefillSeedProductId);
-    if (!p || p.shop !== shopSlug) return;
-    seedPrefillDone.current = true;
-    setCustomId(p.id);
-    setName(p.name);
-    setSummary(p.summary);
-    setDescription(p.description);
-    setPriceDollars((p.price / 100).toFixed(2));
-    setType(p.type === "digital" ? "digital" : "physical");
-    setCategoryId(p.categoryId);
-    setImageUrl(p.image ?? "");
-    setImageFit(p.imageFit === "contain" ? "contain" : p.imageFit === "cover" ? "cover" : "");
-    setBadge(p.badge ?? "");
-    setFormat(p.format ?? "");
-    setOptionsJson(p.options?.length ? JSON.stringify(p.options, null, 2) : "");
-    setStripePaymentLink(p.stripePaymentLink ?? "");
-  }, [isEdit, prefillSeedProductId, shopSlug]);
-
-  useEffect(() => {
-    if (isEdit || prefillSeedProductId) return;
+    if (isEdit) return;
     const cats = SHOP_CONTENT[shopKey]?.categories ?? [];
     if (cats.length > 0 && !categoryId) {
       setCategoryId(cats[0].id);
     }
-  }, [isEdit, shopKey, categoryId, prefillSeedProductId]);
+  }, [isEdit, shopKey, categoryId]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -192,7 +166,7 @@ export function AdminShopCatalogListingForm({
 
   async function removeListing() {
     if (!isEdit || !listingId) return;
-    if (!confirm("Delete this listing from the database? Built-in seed products are unchanged.")) return;
+    if (!confirm("Delete this listing from the database?")) return;
     setSaving(true);
     setError(null);
     try {
@@ -229,12 +203,12 @@ export function AdminShopCatalogListingForm({
           {!isEdit && (
             <div>
               <label className="block text-sm font-medium text-fix-text">
-                Product id (optional — match a built-in id to override)
+                Product id (optional — leave blank to auto-generate)
               </label>
               <input
                 value={customId}
                 onChange={(e) => setCustomId(e.target.value)}
-                placeholder="e.g. ur-starter-bed-kit"
+                placeholder="e.g. my-custom-product-id"
                 className="mt-1 w-full rounded-lg border border-fix-border/20 bg-fix-surface px-3 py-2 font-mono text-sm text-fix-text"
               />
             </div>

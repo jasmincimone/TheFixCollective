@@ -63,7 +63,7 @@ The app uses **Stripe** for payments and **NextAuth** for accounts.
 Each product can use a **Stripe Payment Link** (one price per link, created in the [Stripe Dashboard](https://dashboard.stripe.com/payment-links)):
 
 - Add URLs in **`src/config/paymentLinks.ts`** as `productId: "https://buy.stripe.com/..."`, **or**
-- Set `stripePaymentLink` on a product in `src/data/products.ts`.
+- Set `stripePaymentLink` on a catalog listing in **Admin → Platform shops** (stored in the database).
 
 When set, product cards and product pages show **Buy now** (opens the link) plus **Add to cart** for combining multiple items. Multi-item carts still use **Cart → Proceed to payment** (Checkout Session).
 

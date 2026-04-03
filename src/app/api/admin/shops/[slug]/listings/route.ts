@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/authOptions";
 import { parseShopSlugParam } from "@/lib/adminShop";
-import { PRODUCTS } from "@/data/products";
 import { isAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { LISTING_STATUS } from "@/lib/roles";
@@ -29,43 +28,12 @@ export async function GET(
     return NextResponse.json({ error: "Unknown shop" }, { status: 404 });
   }
 
-  const dbListings = await prisma.shopCatalogListing.findMany({
+  const listings = await prisma.shopCatalogListing.findMany({
     where: { shopSlug: slug },
     orderBy: { updatedAt: "desc" },
   });
-  const dbById = new Map(dbListings.map((l) => [l.id, l]));
 
-  const seedForShop = PRODUCTS.filter((p) => p.shop === slug).map((p) => ({
-    id: p.id,
-    name: p.name,
-    summary: p.summary,
-    priceCents: p.price,
-    type: p.type,
-    categoryId: p.categoryId,
-    imageUrl: p.image ?? null,
-  }));
-  const seedIds = new Set(seedForShop.map((s) => s.id));
-
-  const items: Array<
-    | {
-        rowKind: "built-in";
-        seed: (typeof seedForShop)[number];
-        dbListing: (typeof dbListings)[number] | null;
-      }
-    | { rowKind: "database-only"; dbListing: (typeof dbListings)[number] }
-  > = seedForShop.map((seed) => ({
-    rowKind: "built-in" as const,
-    seed,
-    dbListing: dbById.get(seed.id) ?? null,
-  }));
-
-  for (const l of dbListings) {
-    if (!seedIds.has(l.id)) {
-      items.push({ rowKind: "database-only" as const, dbListing: l });
-    }
-  }
-
-  return NextResponse.json({ listings: dbListings, items });
+  return NextResponse.json({ listings });
 }
 
 export async function POST(

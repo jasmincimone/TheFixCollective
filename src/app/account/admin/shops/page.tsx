@@ -10,8 +10,7 @@ export default function AdminShopsHubPage() {
       <div>
         <h2 className="text-lg font-semibold text-fix-heading">Platform shops</h2>
         <p className="mt-1 text-sm text-fix-text-muted">
-          Edit each shop&apos;s public landing page and catalog listings (merged with the built-in product
-          seed data).
+          Edit each shop&apos;s public landing page and catalog listings (database).
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">

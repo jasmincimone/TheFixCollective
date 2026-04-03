@@ -10,6 +10,7 @@ import { CartContext } from "@/context/CartContext";
 import { PLATFORM_NAV_LINKS } from "@/config/platformNav";
 import { SHOPS } from "@/config/shops";
 import { cn } from "@/lib/cn";
+import { rememberPathBeforeCart } from "@/lib/cartReturn";
 import { leaveMenu, rememberPathBeforeMenu } from "@/lib/menuReturn";
 
 import { Container } from "./Container";
@@ -166,7 +167,12 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <ButtonLink href="/shops" variant="secondary" size="sm">
+          <ButtonLink
+            href="/shops"
+            variant="secondary"
+            size="sm"
+            className="shrink-0 justify-center text-center"
+          >
             Browse shops
           </ButtonLink>
           <Link
@@ -181,6 +187,9 @@ export function SiteHeader() {
           </Link>
           <Link
             href="/cart"
+            onClick={() => {
+              if (pathname !== "/cart") rememberPathBeforeCart(pathname);
+            }}
             aria-label={cartCount > 0 ? `Cart (${cartCount} items)` : "Cart"}
             className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-fix-text hover:bg-fix-bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-fix-cta focus-visible:ring-offset-2"
           >

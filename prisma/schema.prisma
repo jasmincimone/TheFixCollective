@@ -260,7 +260,7 @@ model ShopPage {
   updatedAt           DateTime @updatedAt
 }
 
-/// Admin-editable catalog products per platform shop (merges with seed data in src/data/products.ts).
+/// Admin-editable catalog products per platform shop (source of truth for storefront catalog).
 model ShopCatalogListing {
   id                  String   @id @default(cuid())
   shopSlug            String

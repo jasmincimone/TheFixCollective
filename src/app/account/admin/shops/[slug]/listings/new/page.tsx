@@ -4,20 +4,9 @@ import { notFound } from "next/navigation";
 import { AdminShopCatalogListingForm } from "@/components/AdminShopCatalogListingForm";
 import { getShop } from "@/config/shops";
 
-export default function AdminNewShopListingPage({
-  params,
-  searchParams,
-}: {
-  params: { slug: string };
-  searchParams?: { fromSeed?: string };
-}) {
+export default function AdminNewShopListingPage({ params }: { params: { slug: string } }) {
   const shop = getShop(params.slug);
   if (!shop) notFound();
-
-  const fromSeed =
-    typeof searchParams?.fromSeed === "string" && searchParams.fromSeed.trim()
-      ? searchParams.fromSeed.trim()
-      : undefined;
 
   return (
     <div className="space-y-6">
@@ -27,7 +16,7 @@ export default function AdminNewShopListingPage({
       >
         ← Back to {shop.name}
       </Link>
-      <AdminShopCatalogListingForm shopSlug={shop.slug} prefillSeedProductId={fromSeed} />
+      <AdminShopCatalogListingForm shopSlug={shop.slug} />
     </div>
   );
 }
