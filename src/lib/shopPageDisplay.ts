@@ -1,12 +1,11 @@
 import {
   getShop,
-  SHOP_CONTENT,
   type ShopCategory,
   type ShopLandingContent,
   type ShopProduct,
   type ShopSlug,
 } from "@/config/shops";
-import { DEFAULT_SHOP_FEATURE_SECTIONS, type ShopFeatureCard } from "@/config/shopFeatures";
+import type { ShopFeatureCard } from "@/config/shopFeatures";
 import { prisma } from "@/lib/prisma";
 
 function isShopCategory(x: unknown): x is ShopCategory {
@@ -70,17 +69,13 @@ export async function loadMergedShopDisplay(slug: string): Promise<MergedShopPag
   if (!shop) return null;
 
   const shopKey = shop.slug as ShopSlug;
-  const baseContent = SHOP_CONTENT[shopKey];
   const row = await prisma.shopPage.findUnique({ where: { shopSlug: shop.slug } });
 
-  const categories = parseCategoriesJson(row?.categoriesJson) ?? baseContent.categories;
-  const featured = parseFeaturedJson(row?.featuredJson) ?? baseContent.featured;
+  const categories = parseCategoriesJson(row?.categoriesJson) ?? [];
+  const featured = parseFeaturedJson(row?.featuredJson) ?? [];
   const content: ShopLandingContent = { categories, featured };
 
-  const features =
-    parseFeatureSectionsJson(row?.featureSectionsJson) ??
-    DEFAULT_SHOP_FEATURE_SECTIONS[shopKey] ??
-    [];
+  const features = parseFeatureSectionsJson(row?.featureSectionsJson) ?? [];
 
   return {
     shopSlug: shopKey,

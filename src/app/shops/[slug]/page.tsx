@@ -34,6 +34,11 @@ export default async function ShopPage({ params }: { params: { slug: string } })
   const content = display.content;
   const features = display.features;
 
+  const hasFeatured = content.featured.length > 0;
+  const hasCategories = content.categories.length > 0;
+  const hasComingSoon = features.length > 0;
+  const hasCatalogSection = hasFeatured || hasCategories || hasComingSoon;
+
   return (
     <div>
       <section className="border-b border-fix-border/15">
@@ -78,83 +83,87 @@ export default async function ShopPage({ params }: { params: { slug: string } })
         </Container>
       </section>
 
-      <section>
-        <Container className="py-12">
-          <div className="grid gap-6 lg:grid-cols-3">
-            <Card className="p-6 lg:col-span-2">
-              <div className="text-sm font-semibold text-fix-heading">Categories</div>
-              <p className="mt-2 text-sm leading-relaxed text-fix-text-muted">
-                Explore what this shop offers today. These categories map cleanly to collections or
-                product groups in the catalog.
-              </p>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                {content.categories.map((cat) => (
-                  <div
-                    key={cat.id}
-                    className={`rounded-2xl border border-fix-border/15 bg-fix-bg-muted p-4 ${getShopEmphasisClasses(shopKey).border}`}
-                  >
-                    <div className="text-sm font-semibold text-fix-heading">{cat.name}</div>
-                    <div className="mt-1 text-sm text-fix-text-muted">{cat.description}</div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            <Card className="p-6">
-              <div className="text-sm font-semibold text-fix-heading">Featured items</div>
-              <p className="mt-2 text-sm leading-relaxed text-fix-text-muted">
-                A small, curated set of hero products or kits for this shop.
-              </p>
-              <div className="mt-4 grid gap-3">
-                {content.featured.map((item) => (
-                  <div
-                    key={item.id}
-                    className="rounded-2xl border border-fix-border/15 bg-fix-surface p-4"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="text-sm font-semibold text-fix-heading">{item.name}</div>
-                        <div className="mt-1 text-sm text-fix-text-muted">{item.summary}</div>
-                      </div>
-                      {item.badge ? (
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getShopEmphasisClasses(shopKey).badge}`}
-                        >
-                          {item.badge}
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </div>
-
-          {features.length > 0 ? (
-            <div className="mt-8">
+      {hasCatalogSection ? (
+        <section>
+          <Container className="py-12">
+            {hasFeatured ? (
               <Card className="p-6">
-                <div className="text-sm font-semibold text-fix-heading">Next up</div>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  {features.map((f) => (
+                <div className="text-sm font-semibold text-fix-heading">Featured items</div>
+                <p className="mt-2 text-sm leading-relaxed text-fix-text-muted">
+                  A small, curated set of hero products or kits for this shop.
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {content.featured.map((item) => (
                     <div
-                      key={f.title}
+                      key={item.id}
                       className="rounded-2xl border border-fix-border/15 bg-fix-surface p-4"
                     >
-                      <div className="text-sm font-semibold text-fix-heading">{f.title}</div>
-                      <div className="mt-1 text-sm text-fix-text-muted">{f.description}</div>
-                      <div className="mt-3">
-                        <ButtonLink href={f.href} variant="ghost" size="sm">
-                          {f.cta}
-                        </ButtonLink>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-semibold text-fix-heading">{item.name}</div>
+                          <div className="mt-1 text-sm text-fix-text-muted">{item.summary}</div>
+                        </div>
+                        {item.badge ? (
+                          <span
+                            className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${getShopEmphasisClasses(shopKey).badge}`}
+                          >
+                            {item.badge}
+                          </span>
+                        ) : null}
                       </div>
                     </div>
                   ))}
                 </div>
               </Card>
-            </div>
-          ) : null}
-        </Container>
-      </section>
+            ) : null}
+
+            {hasCategories ? (
+              <Card className={`p-6 ${hasFeatured ? "mt-6" : ""}`}>
+                <div className="text-sm font-semibold text-fix-heading">Categories</div>
+                <p className="mt-2 text-sm leading-relaxed text-fix-text-muted">
+                  Explore what this shop offers. These categories map to collections or product groups in
+                  the catalog.
+                </p>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  {content.categories.map((cat) => (
+                    <div
+                      key={cat.id}
+                      className={`rounded-2xl border border-fix-border/15 bg-fix-bg-muted p-4 ${getShopEmphasisClasses(shopKey).border}`}
+                    >
+                      <div className="text-sm font-semibold text-fix-heading">{cat.name}</div>
+                      <div className="mt-1 text-sm text-fix-text-muted">{cat.description}</div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            ) : null}
+
+            {hasComingSoon ? (
+              <div className="mt-8">
+                <Card className="p-6">
+                  <div className="text-sm font-semibold text-fix-heading">Coming soon</div>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {features.map((f) => (
+                      <div
+                        key={f.title}
+                        className="rounded-2xl border border-fix-border/15 bg-fix-surface p-4"
+                      >
+                        <div className="text-sm font-semibold text-fix-heading">{f.title}</div>
+                        <div className="mt-1 text-sm text-fix-text-muted">{f.description}</div>
+                        <div className="mt-3">
+                          <ButtonLink href={f.href} variant="ghost" size="sm">
+                            {f.cta}
+                          </ButtonLink>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            ) : null}
+          </Container>
+        </section>
+      ) : null}
     </div>
   );
 }

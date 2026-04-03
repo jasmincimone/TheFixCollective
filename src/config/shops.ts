@@ -33,6 +33,16 @@ export type ShopLandingContent = {
   featured: ShopProduct[];
 };
 
+/** Empty shells: landing categories, featured, and “coming soon” cards come from the database (Admin → shop page). */
+const EMPTY_LANDING: ShopLandingContent = { categories: [], featured: [] };
+
+export const SHOP_CONTENT: Record<ShopSlug, ShopLandingContent> = {
+  "urban-roots": EMPTY_LANDING,
+  "self-care": EMPTY_LANDING,
+  stitch: EMPTY_LANDING,
+  "survival-kits": EMPTY_LANDING,
+};
+
 export const SHOPS: ShopConfig[] = [
   {
     slug: "urban-roots",
@@ -40,7 +50,7 @@ export const SHOPS: ShopConfig[] = [
     tagline: "Grow where you are.",
     description:
       "Urban gardening, plant care, and tools for regenerative everyday growing.",
-    theme: { accent: "emerald", emphasis: "forest" }
+    theme: { accent: "emerald", emphasis: "forest" },
   },
   {
     slug: "self-care",
@@ -48,7 +58,7 @@ export const SHOPS: ShopConfig[] = [
     tagline: "Rituals for real life.",
     description:
       "Body care, herbal wellness, and gentle routines that actually stick.",
-    theme: { accent: "rose", emphasis: "gold" }
+    theme: { accent: "rose", emphasis: "gold" },
   },
   {
     slug: "stitch",
@@ -56,7 +66,7 @@ export const SHOPS: ShopConfig[] = [
     tagline: "Make, mend, repeat.",
     description:
       "Textiles, mending kits, patterns, and tools for durable creativity.",
-    theme: { accent: "indigo", emphasis: "bark" }
+    theme: { accent: "indigo", emphasis: "bark" },
   },
   {
     slug: "survival-kits",
@@ -64,134 +74,9 @@ export const SHOPS: ShopConfig[] = [
     tagline: "Ready, not rattled.",
     description:
       "Preparedness kits and essentials designed for calm, capable living.",
-    theme: { accent: "amber", emphasis: "amber" }
-  }
+    theme: { accent: "amber", emphasis: "amber" },
+  },
 ];
-
-export const SHOP_CONTENT: Record<ShopSlug, ShopLandingContent> = {
-  "urban-roots": {
-    categories: [
-      {
-        id: "garden-beds",
-        name: "Garden beds",
-        description: "Modular raised beds, containers, and balcony-friendly setups."
-      },
-      {
-        id: "seedlings",
-        name: "Seedlings",
-        description: "Seasonal veggie, herb, and flower starts for small spaces."
-      },
-      {
-        id: "kids-gardening",
-        name: "Kids gardening",
-        description: "Story-led kits and activities for little growers (ages 3–8)."
-      },
-      {
-        id: "ebooks",
-        name: "Ebooks",
-        description: "Downloadable guides for soil health, watering, and urban composting."
-      },
-      {
-        id: "education",
-        name: "Education",
-        description: "Workshops and mini-courses for first-time and returning growers."
-      }
-    ],
-    featured: [
-      {
-        id: "starter-bed-kit",
-        name: "Urban starter bed kit",
-        summary: "Everything you need to plant your first 4x4 bed—soil, amendments, and plan.",
-        badge: "Best for beginners"
-      },
-      {
-        id: "balcony-greens-pack",
-        name: "Balcony greens seedling pack",
-        summary: "A curated mix of leafy greens that thrive in containers.",
-        badge: "Seasonal"
-      }
-    ]
-  },
-  "self-care": {
-    categories: [
-      {
-        id: "self-care-products",
-        name: "Self-care products",
-        description: "Body oils, bath soaks, salves, and aromatherapy rooted in plant care."
-      }
-    ],
-    featured: [
-      {
-        id: "evening-reset-ritual",
-        name: "Evening reset ritual kit",
-        summary: "A simple, three-step ritual for unwinding at the end of the day.",
-        badge: "Customer favorite"
-      },
-      {
-        id: "grounding-body-oil",
-        name: "Grounding body oil",
-        summary: "Slow-crafted oil blend for daily moisturizing and massage.",
-        badge: "New"
-      }
-    ]
-  },
-  stitch: {
-    categories: [
-      {
-        id: "crochet-wearables",
-        name: "Crochet wearables",
-        description: "Handmade garments, accessories, and heirloom pieces."
-      },
-      {
-        id: "crochet-patterns",
-        name: "Crochet designs & patterns",
-        description: "Downloadable patterns and design templates for all skill levels."
-      }
-    ],
-    featured: [
-      {
-        id: "everyday-cardigan",
-        name: "Everyday crochet cardigan",
-        summary: "A modern, layerable cardigan designed for repeat wear.",
-        badge: "Limited run"
-      },
-      {
-        id: "mending-pattern-pack",
-        name: "Mending pattern pack",
-        summary: "A bundle of visible-mending patterns for denim, knits, and more.",
-        badge: "Digital"
-      }
-    ]
-  },
-  "survival-kits": {
-    categories: [
-      {
-        id: "survival-gear",
-        name: "Survival gear",
-        description: "Tools, lighting, water systems, and essentials for real emergencies."
-      },
-      {
-        id: "emergency-food-kits",
-        name: "Emergency food kits",
-        description: "Shelf-stable, easy-to-cook meals tailored to different households."
-      }
-    ],
-    featured: [
-      {
-        id: "72-hour-home-kit",
-        name: "72-hour home survival kit",
-        summary: "Core supplies for three days of power or water disruption.",
-        badge: "Core kit"
-      },
-      {
-        id: "go-bag-mini",
-        name: "Mini go-bag",
-        summary: "A compact kit for your car, commute, or grab-and-go moments.",
-        badge: "Compact"
-      }
-    ]
-  }
-};
 
 export function getShop(slug: string | undefined) {
   return SHOPS.find((s) => s.slug === slug);
@@ -232,4 +117,3 @@ export function getShopEmphasisClasses(slug: ShopSlug): {
   const shop = getShop(slug);
   return shop ? EMPHASIS_CLASSES[shop.theme.emphasis] : EMPHASIS_CLASSES.forest;
 }
-

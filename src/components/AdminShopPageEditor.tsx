@@ -80,7 +80,7 @@ export function AdminShopPageEditor({
   }
 
   async function resetToDefaults() {
-    if (!confirm("Remove all custom content for this shop and revert to built-in defaults?")) return;
+    if (!confirm("Remove all saved shop page content from the database for this shop?")) return;
     setSaving(true);
     setError(null);
     setSuccess(null);
@@ -92,7 +92,7 @@ export function AdminShopPageEditor({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Reset failed");
-      setSuccess("Reverted to defaults.");
+      setSuccess("Saved content cleared.");
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error");
@@ -123,11 +123,13 @@ export function AdminShopPageEditor({
           {hasSaved ? (
             <p className="mt-1 text-xs text-fix-text-muted">Custom overrides are active.</p>
           ) : (
-            <p className="mt-1 text-xs text-fix-text-muted">Using built-in defaults until you save changes.</p>
+            <p className="mt-1 text-xs text-fix-text-muted">
+              No saved landing content yet — featured, categories, and Coming soon are empty until you save.
+            </p>
           )}
         </div>
         <Button type="button" variant="secondary" size="sm" disabled={saving} onClick={resetToDefaults}>
-          Revert to defaults
+          Clear saved page
         </Button>
       </div>
 
@@ -181,7 +183,7 @@ export function AdminShopPageEditor({
           <p className="mt-1 text-xs text-fix-text-muted">Array of objects with id, name, summary, optional badge.</p>
         </div>
         <div>
-          <label className="block text-sm font-medium text-fix-text">Next up cards (JSON)</label>
+          <label className="block text-sm font-medium text-fix-text">Coming soon cards (JSON)</label>
           <textarea
             rows={8}
             value={form.featureSectionsJson}

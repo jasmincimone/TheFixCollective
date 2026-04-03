@@ -250,11 +250,11 @@ model ShopPage {
   name                String?
   tagline             String?
   description         String?
-  /// Replaces SHOP_CONTENT categories when set (JSON array of { id, name, description })
+  /// Shop landing categories (JSON array of { id, name, description })
   categoriesJson      Json?
-  /// Replaces SHOP_CONTENT featured when set (JSON array of { id, name, summary, badge? })
+  /// Shop landing featured items (JSON array of { id, name, summary, badge? })
   featuredJson        Json?
-  /// Replaces default “Next up” feature cards (JSON array of { title, description, href, cta })
+  /// “Coming soon” cards (JSON array of { title, description, href, cta })
   featureSectionsJson Json?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt

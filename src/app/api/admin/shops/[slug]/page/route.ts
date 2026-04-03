@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/authOptions";
-import { getShop, SHOP_CONTENT } from "@/config/shops";
-import { DEFAULT_SHOP_FEATURE_SECTIONS } from "@/config/shopFeatures";
+import { getShop } from "@/config/shops";
 import { parseShopSlugParam } from "@/lib/adminShop";
 import { isAdmin } from "@/lib/permissions";
 import { Prisma } from "@prisma/client";
@@ -39,22 +38,18 @@ export async function GET(
     return NextResponse.json({ error: "Unknown shop" }, { status: 404 });
   }
 
-  const baseContent = SHOP_CONTENT[slug];
-  const baseFeatures = DEFAULT_SHOP_FEATURE_SECTIONS[slug] ?? [];
   const row = await prisma.shopPage.findUnique({ where: { shopSlug: slug } });
+  const emptyJson = jsonStringifyPretty([]);
 
   const form = {
     name: row?.name?.trim() || shop.name,
     tagline: row?.tagline?.trim() || shop.tagline,
     description: row?.description?.trim() || shop.description,
     categoriesJson:
-      row?.categoriesJson != null ? jsonStringifyPretty(row.categoriesJson) : jsonStringifyPretty(baseContent.categories),
-    featuredJson:
-      row?.featuredJson != null ? jsonStringifyPretty(row.featuredJson) : jsonStringifyPretty(baseContent.featured),
+      row?.categoriesJson != null ? jsonStringifyPretty(row.categoriesJson) : emptyJson,
+    featuredJson: row?.featuredJson != null ? jsonStringifyPretty(row.featuredJson) : emptyJson,
     featureSectionsJson:
-      row?.featureSectionsJson != null
-        ? jsonStringifyPretty(row.featureSectionsJson)
-        : jsonStringifyPretty(baseFeatures),
+      row?.featureSectionsJson != null ? jsonStringifyPretty(row.featureSectionsJson) : emptyJson,
   };
 
   return NextResponse.json({
@@ -129,8 +124,6 @@ export async function PATCH(
   }
 
   const shop = getShop(slug);
-  const baseContent = SHOP_CONTENT[slug];
-  const baseFeatures = DEFAULT_SHOP_FEATURE_SECTIONS[slug] ?? [];
 
   const nameTrim = name?.trim() || null;
   const taglineTrim = tagline?.trim() || null;
@@ -140,9 +133,9 @@ export async function PATCH(
   const storeTagline = shop && taglineTrim && taglineTrim !== shop.tagline ? taglineTrim : null;
   const storeDesc = shop && descTrim && descTrim !== shop.description ? descTrim : null;
 
-  const defaultsCat = JSON.stringify(baseContent.categories);
-  const defaultsFeat = JSON.stringify(baseContent.featured);
-  const defaultsFeatures = JSON.stringify(baseFeatures);
+  const defaultsCat = JSON.stringify([]);
+  const defaultsFeat = JSON.stringify([]);
+  const defaultsFeatures = JSON.stringify([]);
   const storeCategories =
     categoriesJson != null && JSON.stringify(categoriesJson) !== defaultsCat ? categoriesJson : null;
   const storeFeatured =
