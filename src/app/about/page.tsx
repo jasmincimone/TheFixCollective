@@ -6,7 +6,7 @@ import { ButtonLink } from "@/components/ui/Button";
 export const metadata = {
   title: "About us",
   description:
-    "The Fix Collective brings together urban growing, self-care, making, and preparedness under one brand.",
+    "RootSync connects food, goods, and communities through one unified system for local economies.",
 };
 
 export default function AboutPage() {
@@ -18,14 +18,14 @@ export default function AboutPage() {
             About us
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-fix-text-muted">
-            The Fix Collective is a modern platform built around four distinct shops—Urban Roots, Self Care
-            Co, Stitch, and Survival Kits—so you can grow, care, make, and prepare with confidence. We
-            combine curated products, community, a farmer marketplace, and tools like RootSync AI to
-            support self-love, self-care, and self-expression in everyday life.
+            RootSync is building the infrastructure for local economies—connecting food, goods, and
+            communities through one unified system. It combines smart planning tools, a local marketplace,
+            and community-driven access to help growers and makers stop guessing and start building with
+            purpose.
           </p>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-fix-text-muted">
-            Whether you&apos;re starting a balcony garden, building gentle rituals, mending what you love,
-            or keeping your household ready, we&apos;re here to meet you where you are.
+            Whether you&apos;re producing, selling, or simply looking to buy local, RootSync makes it easier
+            to stay connected to what&apos;s happening right where you are.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <ButtonLink href="/shops" variant="cta" size="md">

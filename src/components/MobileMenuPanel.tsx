@@ -58,7 +58,7 @@ export function MobileMenuPanel({ onClose, closeHref }: Props) {
 
           <section className="mb-6">
             <h3 className="text-xs font-semibold uppercase tracking-wide text-fix-text-muted">
-              Platform
+              RootSync
             </h3>
             <ul className="mt-2 grid gap-0.5">
               {PLATFORM_NAV_LINKS.map((item) => (

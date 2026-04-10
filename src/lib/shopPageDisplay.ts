@@ -6,7 +6,11 @@ import {
   type ShopSlug,
 } from "@/config/shops";
 import type { ShopFeatureCard } from "@/config/shopFeatures";
+import { LISTING_STATUS } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
+
+/** How many newest published listings to show as featured on each shop landing page. */
+export const SHOP_LANDING_FEATURED_LIMIT = 6;
 
 function isShopCategory(x: unknown): x is ShopCategory {
   if (!x || typeof x !== "object") return false;
@@ -18,24 +22,8 @@ function isShopCategory(x: unknown): x is ShopCategory {
   );
 }
 
-function isShopProduct(x: unknown): x is ShopProduct {
-  if (!x || typeof x !== "object") return false;
-  const o = x as Record<string, unknown>;
-  return (
-    typeof o.id === "string" &&
-    typeof o.name === "string" &&
-    typeof o.summary === "string" &&
-    (o.badge === undefined || typeof o.badge === "string")
-  );
-}
-
 function parseCategoriesJson(raw: unknown): ShopCategory[] | null {
   if (!Array.isArray(raw) || !raw.every(isShopCategory)) return null;
-  return raw;
-}
-
-function parseFeaturedJson(raw: unknown): ShopProduct[] | null {
-  if (!Array.isArray(raw) || !raw.every(isShopProduct)) return null;
   return raw;
 }
 
@@ -64,15 +52,33 @@ export type MergedShopPageDisplay = {
   features: ShopFeatureCard[];
 };
 
+async function loadRecentFeaturedForShop(shopSlug: string): Promise<ShopProduct[]> {
+  const rows = await prisma.shopCatalogListing.findMany({
+    where: { shopSlug, status: LISTING_STATUS.PUBLISHED },
+    orderBy: { createdAt: "desc" },
+    take: SHOP_LANDING_FEATURED_LIMIT,
+    select: { id: true, name: true, summary: true, badge: true },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    summary: r.summary,
+    badge: r.badge?.trim() || undefined,
+  }));
+}
+
 export async function loadMergedShopDisplay(slug: string): Promise<MergedShopPageDisplay | null> {
   const shop = getShop(slug);
   if (!shop) return null;
 
   const shopKey = shop.slug as ShopSlug;
-  const row = await prisma.shopPage.findUnique({ where: { shopSlug: shop.slug } });
+
+  const [row, featured] = await Promise.all([
+    prisma.shopPage.findUnique({ where: { shopSlug: shop.slug } }),
+    loadRecentFeaturedForShop(shop.slug),
+  ]);
 
   const categories = parseCategoriesJson(row?.categoriesJson) ?? [];
-  const featured = parseFeaturedJson(row?.featuredJson) ?? [];
   const content: ShopLandingContent = { categories, featured };
 
   const features = parseFeatureSectionsJson(row?.featureSectionsJson) ?? [];

@@ -55,7 +55,7 @@ export default function MenuPage() {
 
             <section className="mb-6">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-fix-text-muted">
-                Platform
+                RootSync
               </h2>
               <ul className="mt-2 grid gap-0.5">
                 {PLATFORM_NAV_LINKS.map((item) => (

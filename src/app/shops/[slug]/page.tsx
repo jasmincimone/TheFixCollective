@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -7,7 +8,7 @@ import { Container } from "@/components/Container";
 import { Card } from "@/components/ui/Card";
 import { ButtonLink } from "@/components/ui/Button";
 import { getShop, getShopEmphasisClasses, type ShopSlug } from "@/config/shops";
-import { loadMergedShopDisplay } from "@/lib/shopPageDisplay";
+import { loadMergedShopDisplay, SHOP_LANDING_FEATURED_LIMIT } from "@/lib/shopPageDisplay";
 
 export async function generateMetadata({
   params,
@@ -90,16 +91,17 @@ export default async function ShopPage({ params }: { params: { slug: string } })
               <Card className="p-6">
                 <div className="text-sm font-semibold text-fix-heading">Featured items</div>
                 <p className="mt-2 text-sm leading-relaxed text-fix-text-muted">
-                  A small, curated set of hero products or kits for this shop.
+                  The {SHOP_LANDING_FEATURED_LIMIT} most recently added published products in this shop.
                 </p>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {content.featured.map((item) => (
-                    <div
+                    <Link
                       key={item.id}
-                      className="rounded-2xl border border-fix-border/15 bg-fix-surface p-4"
+                      href={`/products/${item.id}`}
+                      className="block rounded-2xl border border-fix-border/15 bg-fix-surface p-4 transition-colors hover:border-fix-border/30 hover:bg-fix-bg-muted/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-fix-cta focus-visible:ring-offset-2 focus-visible:ring-offset-fix-bg"
                     >
                       <div className="flex items-start justify-between gap-3">
-                        <div>
+                        <div className="min-w-0">
                           <div className="text-sm font-semibold text-fix-heading">{item.name}</div>
                           <div className="mt-1 text-sm text-fix-text-muted">{item.summary}</div>
                         </div>
@@ -111,7 +113,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
                           </span>
                         ) : null}
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </Card>

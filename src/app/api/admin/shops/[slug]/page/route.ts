@@ -47,7 +47,6 @@ export async function GET(
     description: row?.description?.trim() || shop.description,
     categoriesJson:
       row?.categoriesJson != null ? jsonStringifyPretty(row.categoriesJson) : emptyJson,
-    featuredJson: row?.featuredJson != null ? jsonStringifyPretty(row.featuredJson) : emptyJson,
     featureSectionsJson:
       row?.featureSectionsJson != null ? jsonStringifyPretty(row.featureSectionsJson) : emptyJson,
   };
@@ -83,7 +82,6 @@ export async function PATCH(
     tagline,
     description,
     categoriesJson: categoriesRaw,
-    featuredJson: featuredRaw,
     featureSectionsJson: featuresRaw,
     reset,
   } = body as {
@@ -91,7 +89,6 @@ export async function PATCH(
     tagline?: string;
     description?: string;
     categoriesJson?: string;
-    featuredJson?: string;
     featureSectionsJson?: string;
     reset?: boolean;
   };
@@ -112,11 +109,9 @@ export async function PATCH(
   }
 
   let categoriesJson: unknown = null;
-  let featuredJson: unknown = null;
   let featureSectionsJson: unknown = null;
   try {
     categoriesJson = parseJsonField(categoriesRaw, "categories");
-    featuredJson = parseJsonField(featuredRaw, "featured");
     featureSectionsJson = parseJsonField(featuresRaw, "feature sections");
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Invalid JSON";
@@ -134,12 +129,9 @@ export async function PATCH(
   const storeDesc = shop && descTrim && descTrim !== shop.description ? descTrim : null;
 
   const defaultsCat = JSON.stringify([]);
-  const defaultsFeat = JSON.stringify([]);
   const defaultsFeatures = JSON.stringify([]);
   const storeCategories =
     categoriesJson != null && JSON.stringify(categoriesJson) !== defaultsCat ? categoriesJson : null;
-  const storeFeatured =
-    featuredJson != null && JSON.stringify(featuredJson) !== defaultsFeat ? featuredJson : null;
   const storeFeatureSections =
     featureSectionsJson != null && JSON.stringify(featureSectionsJson) !== defaultsFeatures
       ? featureSectionsJson
@@ -150,7 +142,6 @@ export async function PATCH(
     !storeTagline &&
     !storeDesc &&
     storeCategories == null &&
-    storeFeatured == null &&
     storeFeatureSections == null;
 
   if (isEmpty) {
@@ -166,7 +157,7 @@ export async function PATCH(
       tagline: storeTagline,
       description: storeDesc,
       categoriesJson: storeCategories ?? undefined,
-      featuredJson: storeFeatured ?? undefined,
+      featuredJson: undefined,
       featureSectionsJson: storeFeatureSections ?? undefined,
     },
     update: {
@@ -175,8 +166,7 @@ export async function PATCH(
       description: storeDesc,
       categoriesJson:
         storeCategories === null ? Prisma.DbNull : (storeCategories as Prisma.InputJsonValue),
-      featuredJson:
-        storeFeatured === null ? Prisma.DbNull : (storeFeatured as Prisma.InputJsonValue),
+      featuredJson: Prisma.DbNull,
       featureSectionsJson:
         storeFeatureSections === null
           ? Prisma.DbNull

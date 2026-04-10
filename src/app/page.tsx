@@ -19,14 +19,17 @@ export default function HomePage() {
           {/* Single-column landing funnel (never a side-by-side hero + shops grid). */}
           <div className="mx-auto flex w-full min-w-0 max-w-2xl flex-col items-center text-center">
             <h1 className="text-3xl font-bold tracking-tight text-fix-heading sm:text-4xl md:text-5xl">
-              Let&apos;s Grow Something!
+              Stay Synced!
             </h1>
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-fix-text">
-              Experience all that The Fix Collective has to offer, from urban gardening and
-              self-care products, to survival preparedness, we have you covered
-              when it comes to the highest level of self-love, self-care, and
-              self-expression.
-            </p>
+            <div className="mt-5 max-w-xl space-y-4 text-base leading-relaxed text-fix-text">
+              <p>
+                RootSync brings local food and goods into sync with real community demand.
+              </p>
+              <p>
+                No more scattered tools or missed connections, just one system that helps people
+                build, sell, and grow right where they are.
+              </p>
+            </div>
             <div className="mt-8 flex w-full max-w-xs flex-col gap-3">
               <ButtonLink href="/about" variant="cta" size="lg" className="uppercase tracking-wide">
                 About us
@@ -63,6 +66,11 @@ export default function HomePage() {
                 <div className="mx-auto mt-1 h-px w-12 bg-gold/50" />
                 <div className="mt-1 text-lg font-medium tracking-wide text-clay/90">COLLECTIVE</div>
               </div>
+              <p className="mx-auto mt-6 max-w-lg text-center text-sm leading-relaxed text-clay/85 sm:text-base">
+                Experience all that The Fix Collective has to offer, from urban gardening and
+                self-care products, to survival preparedness—we have you covered when it comes to the
+                highest level of self-love, self-care, and self-expression.
+              </p>
             </div>
             <div className="border-t border-clay/10 px-4 pb-8 pt-6 sm:px-8 sm:pb-10 sm:pt-8">
               <p className="text-center text-xs font-semibold uppercase tracking-wider text-clay/70">

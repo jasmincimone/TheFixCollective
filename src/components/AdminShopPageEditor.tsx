@@ -11,7 +11,6 @@ type FormState = {
   tagline: string;
   description: string;
   categoriesJson: string;
-  featuredJson: string;
   featureSectionsJson: string;
 };
 
@@ -64,7 +63,6 @@ export function AdminShopPageEditor({
           tagline: form.tagline,
           description: form.description,
           categoriesJson: form.categoriesJson,
-          featuredJson: form.featuredJson,
           featureSectionsJson: form.featureSectionsJson,
         }),
       });
@@ -124,7 +122,8 @@ export function AdminShopPageEditor({
             <p className="mt-1 text-xs text-fix-text-muted">Custom overrides are active.</p>
           ) : (
             <p className="mt-1 text-xs text-fix-text-muted">
-              No saved landing content yet — featured, categories, and Coming soon are empty until you save.
+              No saved landing content yet — categories and Coming soon are empty until you save. Featured
+              items are always the newest published products from this shop&apos;s catalog.
             </p>
           )}
         </div>
@@ -172,15 +171,10 @@ export function AdminShopPageEditor({
             Array of objects with id, name, and description.
           </p>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-fix-text">Featured items (JSON)</label>
-          <textarea
-            rows={8}
-            value={form.featuredJson}
-            onChange={(e) => setForm((f) => (f ? { ...f, featuredJson: e.target.value } : f))}
-            className="mt-1 w-full rounded-lg border border-fix-border/20 bg-fix-surface px-3 py-2 font-mono text-xs text-fix-text"
-          />
-          <p className="mt-1 text-xs text-fix-text-muted">Array of objects with id, name, summary, optional badge.</p>
+        <div className="rounded-xl border border-fix-border/15 bg-fix-bg-muted/60 px-4 py-3 text-sm text-fix-text-muted">
+          <span className="font-medium text-fix-heading">Featured items</span> on the public shop page are
+          the six most recently created <strong className="text-fix-text">published</strong> listings in
+          this shop&apos;s catalog (not edited here).
         </div>
         <div>
           <label className="block text-sm font-medium text-fix-text">Coming soon cards (JSON)</label>

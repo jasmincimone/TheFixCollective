@@ -81,10 +81,10 @@ export function SiteHeader() {
             </span>
             <div className="leading-tight">
               <div className="text-sm font-semibold text-fix-heading">
-                The Fix Collective
+                RootSync
               </div>
               <div className="text-xs text-fix-text-muted">
-                {activeShop ? activeShop.name : "Let's grow something!"}
+                {activeShop ? activeShop.name : "Stay Synced!"}
               </div>
             </div>
           </Link>

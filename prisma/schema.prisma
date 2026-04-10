@@ -252,7 +252,7 @@ model ShopPage {
   description         String?
   /// Shop landing categories (JSON array of { id, name, description })
   categoriesJson      Json?
-  /// Shop landing featured items (JSON array of { id, name, summary, badge? })
+  /// Legacy / unused — featured items come from the newest published ShopCatalogListing rows.
   featuredJson        Json?
   /// “Coming soon” cards (JSON array of { title, description, href, cta })
   featureSectionsJson Json?

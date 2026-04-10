@@ -10,10 +10,10 @@ export function SiteFooter() {
         <div className="grid gap-10 md:grid-cols-3">
           <div>
             <div className="text-sm font-semibold text-fix-heading">
-              The Fix Collective
+              RootSync
             </div>
             <p className="mt-2 text-sm text-fix-text-muted">
-              A modern collective for growing, caring, making, and staying ready.
+              Connecting what people make with the communities around them.
             </p>
           </div>
 
@@ -36,7 +36,7 @@ export function SiteFooter() {
 
           <div>
             <div className="text-xs font-semibold uppercase tracking-wide text-fix-text-muted">
-              Platform
+              RootSync
             </div>
             <div className="mt-3 grid gap-2">
               <Link
@@ -68,7 +68,9 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-10 flex flex-col gap-2 border-t border-fix-border/15 pt-6 text-xs text-fix-text-muted sm:flex-row sm:items-center sm:justify-between">
-          <div>© {new Date().getFullYear()} The Fix Collective</div>
+          <div>
+            © {new Date().getFullYear()} RootSync, Inc., powered by The Fix Collective, LLC.
+          </div>
           <div className="flex flex-wrap gap-x-4 gap-y-2">
             <Link href="/about" className="hover:text-fix-heading">
               About us
