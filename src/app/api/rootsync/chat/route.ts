@@ -71,7 +71,11 @@ export async function POST(request: NextRequest) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey?.trim()) {
     return NextResponse.json(
-      { error: "RootSync is not configured yet. Add OPENAI_API_KEY to your environment." },
+      {
+        error: "RootSync is not configured yet. Add OPENAI_API_KEY to your environment.",
+        hint:
+          "Local: put OPENAI_API_KEY in .env.local at the project root, then restart the dev server (env is read at startup). Production: add OPENAI_API_KEY in your host’s environment (e.g. Vercel → Project → Settings → Environment Variables) and redeploy. Use the exact name OPENAI_API_KEY (server-only; do not use NEXT_PUBLIC_).",
+      },
       { status: 503 }
     );
   }

@@ -17,6 +17,12 @@ type ConversationSummary = {
   updatedAt: string;
 };
 
+function formatChatApiError(data: { error?: string; hint?: string }) {
+  const err = typeof data.error === "string" ? data.error : "Request failed.";
+  const hint = typeof data.hint === "string" && data.hint.trim() ? `\n\n${data.hint.trim()}` : "";
+  return err + hint;
+}
+
 const SUGGESTIONS = [
   "What should I plant first in early spring in zone 6b?",
   "Help me sketch a simple 4-bed crop rotation for vegetables.",
@@ -149,9 +155,10 @@ export function RootSyncChat() {
           message?: string;
           conversationId?: string;
           error?: string;
+          hint?: string;
         };
         if (!res.ok) {
-          setError(typeof data.error === "string" ? data.error : "Request failed.");
+          setError(formatChatApiError(data));
           setMessages((prev) => prev.slice(0, -1));
           setInput(text);
           return;
@@ -189,9 +196,13 @@ export function RootSyncChat() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: next }),
       });
-      const data = (await res.json().catch(() => ({}))) as { message?: string; error?: string };
+      const data = (await res.json().catch(() => ({}))) as {
+        message?: string;
+        error?: string;
+        hint?: string;
+      };
       if (!res.ok) {
-        setError(typeof data.error === "string" ? data.error : "Request failed.");
+        setError(formatChatApiError(data));
         setMessages((prev) => prev.slice(0, -1));
         setInput(text);
         return;
@@ -284,7 +295,7 @@ export function RootSyncChat() {
       </div>
 
       {error ? (
-        <div className="border-t border-bark/20 bg-fix-bg-muted px-4 py-2 text-sm text-bark sm:px-5">
+        <div className="whitespace-pre-line border-t border-bark/20 bg-fix-bg-muted px-4 py-2 text-sm text-bark sm:px-5">
           {error}
         </div>
       ) : null}

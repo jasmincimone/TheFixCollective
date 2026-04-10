@@ -234,7 +234,11 @@ export default async function PublicVendorProfilePage({
               {vendor.listings.map((listing) => (
                 <li key={listing.id}>
                   <Card className="flex h-full gap-4 overflow-hidden p-4">
-                    <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-fix-border/15 bg-fix-bg-muted">
+                    <Link
+                      href={`/marketplace/listings/${listing.id}`}
+                      className="relative block h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-fix-border/15 bg-fix-bg-muted outline-none ring-fix-cta transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-2"
+                      aria-label={`View ${listing.title}`}
+                    >
                       {listing.imageUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element -- public uploads or external URLs
                         <img
@@ -242,10 +246,19 @@ export default async function PublicVendorProfilePage({
                           alt=""
                           className="h-full w-full object-cover"
                         />
-                      ) : null}
-                    </div>
+                      ) : (
+                        <span className="flex h-full w-full items-center justify-center text-[10px] text-fix-text-muted">
+                          View
+                        </span>
+                      )}
+                    </Link>
                     <div className="min-w-0 flex-1">
-                      <div className="font-medium text-fix-heading">{listing.title}</div>
+                      <Link
+                        href={`/marketplace/listings/${listing.id}`}
+                        className="font-medium text-fix-heading hover:text-fix-link hover:underline"
+                      >
+                        {listing.title}
+                      </Link>
                       <div className="mt-1 text-sm font-medium text-fix-text">
                         {formatPrice(listing.priceCents)}
                       </div>

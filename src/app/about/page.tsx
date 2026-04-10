@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { Container } from "@/components/Container";
@@ -17,6 +18,15 @@ export default function AboutPage() {
           <h1 className="text-3xl font-semibold tracking-tight text-fix-heading sm:text-4xl">
             About us
           </h1>
+          <div className="mt-5">
+            <Image
+              src="/images/platform/rootsync/logo.png"
+              alt="RootSync"
+              width={72}
+              height={72}
+              className="h-16 w-16 rounded-full object-cover sm:h-[72px] sm:w-[72px]"
+            />
+          </div>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-fix-text-muted">
             RootSync is building the infrastructure for local economies—connecting food, goods, and
             communities through one unified system. It combines smart planning tools, a local marketplace,
@@ -40,6 +50,21 @@ export default function AboutPage() {
             >
               Back to home
             </Link>
+          </div>
+
+          <h2 className="mt-12 text-3xl font-semibold tracking-tight text-fix-heading sm:mt-16 sm:text-4xl">
+            RootSync Demo
+          </h2>
+          <div className="mt-6 max-w-4xl overflow-hidden rounded-2xl border border-fix-border/15 bg-black shadow-soft">
+            <video
+              className="aspect-video w-full object-contain"
+              controls
+              playsInline
+              preload="metadata"
+            >
+              <source src="/videos/RootSyncDemo2026.MP4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
           </div>
         </Container>
       </section>
