@@ -81,6 +81,18 @@ export function SiteFooter() {
             <Link href="/terms" className="hover:text-fix-heading">
               Terms
             </Link>
+            <Link href="/disclaimer" className="hover:text-fix-heading">
+              Disclaimer
+            </Link>
+            <Link href="/ai-disclaimer" className="hover:text-fix-heading">
+              AI disclaimer
+            </Link>
+            <Link href="/vendor-agreement" className="hover:text-fix-heading">
+              Vendor agreement
+            </Link>
+            <Link href="/seller-terms" className="hover:text-fix-heading">
+              Seller terms
+            </Link>
           </div>
         </div>
       </Container>

@@ -23,19 +23,20 @@ export default function HomePage() {
             </h1>
             <div className="mt-5 max-w-xl space-y-4 text-base leading-relaxed text-fix-text">
               <p>
-                RootSync brings local food and goods into sync with real community demand.
+                A Marketplace for Self-Sufficiency. A Platform for Connection.
               </p>
               <p>
-                No more scattered tools or missed connections, just one system that helps people
-                build, sell, and grow right where they are.
+                Shop handmade goods, supplies, and resources through The Fix Collective — then
+                connect on RootSync to learn, share, and participate in a growing network of local
+                creators and communities.
               </p>
             </div>
-            <div className="mt-8 flex w-full max-w-xs flex-col gap-3">
-              <ButtonLink href="/about" variant="cta" size="lg" className="uppercase tracking-wide">
-                About us
+            <div className="mt-8 flex w-full max-w-sm flex-col gap-3">
+              <ButtonLink href="/shops" variant="cta" size="lg" className="uppercase tracking-wide">
+                👉 🌱 Shop The Fix Collective
               </ButtonLink>
-              <ButtonLink href="/signup" variant="secondary" size="lg" className="uppercase tracking-wide">
-                Sign up
+              <ButtonLink href="/platform" variant="secondary" size="lg" className="uppercase tracking-wide">
+                👉 🌐 Enter RootSync Platform
               </ButtonLink>
             </div>
           </div>
