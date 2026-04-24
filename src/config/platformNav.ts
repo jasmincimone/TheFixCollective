@@ -1,8 +1,8 @@
 /** Shared labels for header + /menu + mobile panel (single source of truth). */
 export const PLATFORM_NAV_LINKS = [
-  { href: "/platform", label: "RootSync" },
+  { href: "/rootsync", label: "RootSync" },
   { href: "/marketplace", label: "Marketplace" },
-  { href: "/rootsync", label: "RootSync AI" },
+  { href: "/rootsyncai", label: "RootSync AI" },
   { href: "/messages/inbox", label: "Messages" },
   { href: "/community", label: "Community" },
   { href: "/courses", label: "Courses" },

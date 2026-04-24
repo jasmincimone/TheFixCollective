@@ -35,7 +35,7 @@ export default function HomePage() {
               <ButtonLink href="/shops" variant="cta" size="lg" className="uppercase tracking-wide">
                 👉 🌱 Shop The Fix Collective
               </ButtonLink>
-              <ButtonLink href="/platform" variant="secondary" size="lg" className="uppercase tracking-wide">
+              <ButtonLink href="/rootsync" variant="secondary" size="lg" className="uppercase tracking-wide">
                 👉 🌐 Enter RootSync Platform
               </ButtonLink>
             </div>
@@ -114,8 +114,8 @@ export default function HomePage() {
                 in when you’re ready with the first workflows.
               </p>
               <div className="mt-4">
-                <ButtonLink href="/rootsync" variant="secondary" size="sm">
-                  View RootSync page
+                <ButtonLink href="/rootsyncai" variant="secondary" size="sm">
+                  View RootSync AI
                 </ButtonLink>
               </div>
             </Card>

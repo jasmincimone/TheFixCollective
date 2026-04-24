@@ -58,7 +58,7 @@ export function SiteFooter() {
                 Farmer marketplace
               </Link>
               <Link
-                href="/rootsync"
+                href="/rootsyncai"
                 className="text-sm text-fix-link hover:text-fix-link-hover"
               >
                 RootSync (AI assistant)

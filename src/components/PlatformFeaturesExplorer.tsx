@@ -35,7 +35,7 @@ const FEATURES: Feature[] = [
   {
     id: "rootsync-ai",
     title: "RootSync AI",
-    href: "/rootsync",
+    href: "/rootsyncai",
     iconSrc: "/images/platform/features/rootsync-ai.png",
     description:
       "Use the AI assistant for guidance on planning, growing, and running resilient local business workflows.",
@@ -84,29 +84,28 @@ export function PlatformFeaturesExplorer() {
 
   return (
     <div className="mt-10">
-      <div className="relative rounded-3xl bg-fix-surface/70 p-2 sm:p-3">
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+      <div className="relative rounded-3xl bg-fix-surface/70 p-1.5 sm:p-2 md:p-3">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 md:gap-4">
           {FEATURES.map((feature) => (
             <button
               key={feature.id}
               type="button"
               onClick={() => setSelectedId(feature.id)}
+              aria-label={`Open ${feature.title}`}
               className={cn(
-                "group rounded-[26px] bg-[#f3f0ed] p-2 text-left transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fix-cta focus-visible:ring-offset-2",
+                "group rounded-[18px] bg-[#f3f0ed] p-1.5 transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fix-cta focus-visible:ring-offset-2 sm:rounded-[22px] sm:p-2 md:rounded-[26px] md:p-2.5",
                 selected?.id === feature.id && "ring-2 ring-fix-cta/60"
               )}
               aria-pressed={selected?.id === feature.id}
             >
               <Image
                 src={feature.iconSrc}
-                alt={feature.title}
+                alt=""
                 width={420}
                 height={420}
-                className="h-auto w-full rounded-[22px] object-cover"
+                sizes="(max-width: 640px) 42vw, (max-width: 768px) 45vw, (max-width: 1024px) 30vw, 33vw"
+                className="mx-auto h-auto w-full max-w-[9rem] rounded-[14px] object-cover sm:max-w-[11rem] sm:rounded-[18px] md:mx-0 md:max-w-none md:rounded-[22px]"
               />
-              <div className="pb-2 pt-1 text-center text-[22px] font-medium tracking-tight text-fix-heading">
-                {feature.title}
-              </div>
             </button>
           ))}
         </div>

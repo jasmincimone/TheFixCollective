@@ -1,55 +1,47 @@
 import Image from "next/image";
 
 import { Container } from "@/components/Container";
-import { RootSyncChat } from "@/components/RootSyncChat";
-import { RootSyncFeatureCards } from "@/components/RootSyncFeatureCards";
+import { PlatformFeaturesExplorer } from "@/components/PlatformFeaturesExplorer";
+import { ButtonLink } from "@/components/ui/Button";
 
 export const metadata = {
-  title: "RootSync AI",
+  title: "RootSync",
 };
 
-export default function RootSyncPage() {
+export default function RootSyncPlatformPage() {
   return (
     <Container className="py-12 sm:py-16">
-      <div className="max-w-3xl">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-5">
+      <div className="mx-auto max-w-5xl">
+        <div className="flex justify-center">
           <Image
             src="/images/platform/rootsync/logo.png"
             alt="RootSync"
-            width={72}
-            height={72}
-            className="h-16 w-16 shrink-0 rounded-full object-cover sm:h-[72px] sm:w-[72px]"
+            width={280}
+            height={280}
+            className="h-44 w-44 rounded-full object-cover sm:h-56 sm:w-56"
+            priority
           />
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-fix-heading sm:text-4xl">
-              RootSync AI
-            </h1>
-            <p className="mt-3 text-base text-fix-text-muted">
-              Your AI guide for growing, eating well, and planning a resilient
-              food business—rooted in farming, gardening, and healthy food.
-            </p>
-          </div>
         </div>
-      </div>
 
-      <div className="mx-auto mt-10 max-w-56 sm:mt-12">
-        <Image
-          src="/images/platform/rootsync/hero-mark.png"
-          alt="RootSync AI illustration: growth, food, and connection"
-          width={400}
-          height={400}
-          className="h-auto w-full rounded-2xl object-contain shadow-soft"
-          sizes="(max-width: 768px) 100vw, 14rem"
-          priority
-        />
-      </div>
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <ButtonLink href="/signup" variant="cta" size="md" className="min-w-[150px] justify-center">
+            Sign up
+          </ButtonLink>
+          <ButtonLink href="/about" variant="secondary" size="md" className="min-w-[150px] justify-center">
+            About us
+          </ButtonLink>
+        </div>
 
-      <RootSyncFeatureCards />
+        <div className="mx-auto mt-12 max-w-4xl text-center">
+          <h1 className="text-3xl font-semibold tracking-tight text-fix-heading sm:text-4xl">RootSync</h1>
+          <p className="mt-3 text-base leading-relaxed text-fix-text-muted">
+            Explore every part of the ecosystem. Click a feature icon to see details and jump to that section
+            of the platform.
+          </p>
+        </div>
 
-      <div className="mx-auto w-full max-w-6xl">
-        <RootSyncChat />
+        <PlatformFeaturesExplorer />
       </div>
     </Container>
   );
 }
-
