@@ -24,6 +24,7 @@ export async function GET() {
       phone: true,
       phoneVerifiedAt: true,
       consentSmsTwoFactorAt: true,
+      consentEmailTwoFactorAt: true,
       smsTwoFactorSignupConsentAt: true,
       marketingOptIn: true,
       marketingOptInAt: true,
@@ -40,9 +41,11 @@ export async function GET() {
     phone: user.phone,
     phoneVerifiedAt: user.phoneVerifiedAt?.toISOString() ?? null,
     consentSmsTwoFactorAt: user.consentSmsTwoFactorAt?.toISOString() ?? null,
+    consentEmailTwoFactorAt: user.consentEmailTwoFactorAt?.toISOString() ?? null,
     smsTwoFactorSignupConsentAt: user.smsTwoFactorSignupConsentAt?.toISOString() ?? null,
     marketingOptIn: user.marketingOptIn,
     marketingOptInAt: user.marketingOptInAt?.toISOString() ?? null,
+    emailOtpConfigured: Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM),
   });
 }
 
@@ -55,6 +58,7 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const tfaRaw = body?.twoFactorMethod;
     const marketingRaw = body?.marketingOptIn;
+    const agreeEmailTwoFactor = body?.agreeEmailTwoFactor === true;
     const currentPassword = typeof body?.currentPassword === "string" ? body.currentPassword : "";
 
     const hasTfa = tfaRaw !== undefined && tfaRaw !== null;
@@ -71,7 +75,12 @@ export async function PATCH(request: NextRequest) {
     if (hasTfa) {
       const u = await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { passwordHash: true, phone: true, phoneVerifiedAt: true },
+        select: {
+          passwordHash: true,
+          phone: true,
+          phoneVerifiedAt: true,
+          consentEmailTwoFactorAt: true,
+        },
       });
       if (!u?.passwordHash) {
         return NextResponse.json({ error: "Password sign-in is not set for this account." }, { status: 400 });
@@ -93,11 +102,23 @@ export async function PATCH(request: NextRequest) {
           );
         }
       }
+      if (tfaRaw === TWO_FACTOR_METHOD.EMAIL && !agreeEmailTwoFactor && !u?.consentEmailTwoFactorAt) {
+        return NextResponse.json(
+          {
+            error:
+              "You must agree to receive security one-time codes by email before enabling email two-factor.",
+          },
+          { status: 400 }
+        );
+      }
     }
 
     const data: Prisma.UserUpdateInput = {};
     if (hasTfa) {
       data.twoFactorMethod = tfaRaw;
+      if (tfaRaw === TWO_FACTOR_METHOD.EMAIL && agreeEmailTwoFactor) {
+        data.consentEmailTwoFactorAt = new Date();
+      }
     }
     if (hasMarketing) {
       data.marketingOptIn = marketingRaw;

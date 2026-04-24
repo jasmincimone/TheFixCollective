@@ -53,12 +53,24 @@ export async function POST(request: NextRequest) {
         { status: 403 }
       );
     }
+    if (tf === TWO_FACTOR_METHOD.EMAIL && !user.consentEmailTwoFactorAt) {
+      return NextResponse.json(
+        {
+          error:
+            "Email sign-in codes require consent. Sign in, open Account Settings, check the email security consent box, and enable Email code again.",
+        },
+        { status: 403 }
+      );
+    }
     if (tf === TWO_FACTOR_METHOD.EMAIL) {
       const key = process.env.RESEND_API_KEY;
       const from = process.env.EMAIL_FROM;
       if (!key || !from) {
         return NextResponse.json(
-          { error: "Email sign-in codes are not configured on this server." },
+          {
+            error:
+              "Email sign-in codes are not configured on this server. Set RESEND_API_KEY and EMAIL_FROM, then restart/redeploy.",
+          },
           { status: 503 }
         );
       }
@@ -99,6 +111,7 @@ export async function POST(request: NextRequest) {
     });
 
     let smsUsedDevBypass = false;
+    let emailUsedDevBypass = false;
     if (channel === CHALLENGE_CHANNEL.EMAIL) {
       const sent = await sendLoginOtpEmail(user.email, code);
       if (!sent.ok) {
@@ -108,6 +121,7 @@ export async function POST(request: NextRequest) {
           { status: 503 }
         );
       }
+      emailUsedDevBypass = Boolean(sent.devBypass);
     } else {
       const sent = await sendSms(user.phone!, `Your sign-in code is ${code}. It expires in 10 minutes.`);
       if (!sent.ok) {
@@ -124,6 +138,11 @@ export async function POST(request: NextRequest) {
       needsTwoFactor: true,
       challengeId,
       channel,
+      ...(emailUsedDevBypass
+        ? {
+            hint: "Email delivery is not configured in this environment — check the terminal running `next dev` for your sign-in code.",
+          }
+        : {}),
       ...(smsUsedDevBypass
         ? {
             hint: "Twilio is not configured — check the terminal running `next dev` for your sign-in code (no text was sent).",

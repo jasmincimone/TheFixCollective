@@ -32,16 +32,24 @@ export async function sendPasswordResetEmail(to: string, rawToken: string): Prom
   return { ok: true };
 }
 
-export async function sendLoginOtpEmail(to: string, code: string): Promise<{ ok: boolean; error?: string }> {
+export async function sendLoginOtpEmail(
+  to: string,
+  code: string
+): Promise<{ ok: boolean; error?: string; devBypass?: boolean }> {
   const key = process.env.RESEND_API_KEY;
   if (!key) {
     if (process.env.NODE_ENV === "development") {
       console.warn("[email] RESEND_API_KEY missing; login OTP for", to, ":", code);
+      return { ok: true, devBypass: true };
     }
     return { ok: false, error: "Email is not configured." };
   }
   const from = process.env.EMAIL_FROM;
   if (!from) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[email] EMAIL_FROM missing; login OTP for", to, ":", code);
+      return { ok: true, devBypass: true };
+    }
     return { ok: false, error: "EMAIL_FROM is not set." };
   }
   const resend = new Resend(key);

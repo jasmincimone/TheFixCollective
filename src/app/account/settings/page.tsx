@@ -18,9 +18,11 @@ type SettingsState = {
   phone: string | null;
   phoneVerifiedAt: string | null;
   consentSmsTwoFactorAt: string | null;
+  consentEmailTwoFactorAt: string | null;
   smsTwoFactorSignupConsentAt: string | null;
   marketingOptIn: boolean;
   marketingOptInAt: string | null;
+  emailOtpConfigured: boolean;
 };
 
 function Section({
@@ -72,6 +74,7 @@ export default function AccountSettingsPage() {
   const [lastSmsTrace, setLastSmsTrace] = useState<{ sentTo: string; twilioSid?: string } | null>(null);
 
   const [agreeSmsTwoFactor, setAgreeSmsTwoFactor] = useState(false);
+  const [agreeEmailTwoFactor, setAgreeEmailTwoFactor] = useState(false);
   const [marketingOptIn, setMarketingOptIn] = useState(false);
 
   const [saving, setSaving] = useState(false);
@@ -105,6 +108,7 @@ export default function AccountSettingsPage() {
     setNameInput(j.name || "");
     setPhoneInput(j.phone || "");
     setMarketingOptIn(Boolean(j.marketingOptIn));
+    setAgreeEmailTwoFactor(Boolean(j.consentEmailTwoFactorAt));
     setNewEmail("");
     setEmailPassword("");
   }, []);
@@ -209,7 +213,11 @@ export default function AccountSettingsPage() {
       const res = await fetch("/api/account/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ twoFactorMethod, currentPassword: securityPassword }),
+        body: JSON.stringify({
+          twoFactorMethod,
+          currentPassword: securityPassword,
+          agreeEmailTwoFactor,
+        }),
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -555,6 +563,12 @@ export default function AccountSettingsPage() {
             After your password, we&apos;ll ask for a one-time code. <strong>None</strong> resets two-factor to
             password-only sign-in.
           </p>
+          {!data.emailOtpConfigured ? (
+            <p className="mt-2 rounded-md border border-amber/40 bg-amber/10 px-3 py-2 text-xs text-fix-text">
+              Email code delivery is not configured on this server. Add <code>RESEND_API_KEY</code> and{" "}
+              <code>EMAIL_FROM</code> to your environment, then restart/redeploy.
+            </p>
+          ) : null}
           <div className="mt-4 max-w-md">
             <label htmlFor="security-current-password" className="block text-sm font-medium text-fix-text">
               Current password (required for security changes)
@@ -572,6 +586,24 @@ export default function AccountSettingsPage() {
               className={inputClass}
             />
           </div>
+          <div className="mt-3 max-w-lg rounded-lg border border-fix-border/20 bg-fix-bg-muted/40 p-3">
+            <label className="flex cursor-pointer items-start gap-3 text-sm leading-snug text-fix-text">
+              <input
+                type="checkbox"
+                checked={agreeEmailTwoFactor}
+                onChange={(e) => {
+                  setAgreeEmailTwoFactor(e.target.checked);
+                  setTfaErr("");
+                  setTfaMsg("");
+                }}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-fix-border/40 text-amber focus:ring-amber"
+              />
+              <span>
+                I agree to receive one-time security sign-in codes by email when Email code two-factor
+                authentication is enabled.
+              </span>
+            </label>
+          </div>
           <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             <Button
               type="button"
@@ -587,8 +619,16 @@ export default function AccountSettingsPage() {
               type="button"
               size="sm"
               variant={method === TWO_FACTOR_METHOD.EMAIL ? "primary" : "secondary"}
-              disabled={saving || !securityPassword}
-              title={!securityPassword ? "Enter current password first" : undefined}
+              disabled={saving || !securityPassword || !agreeEmailTwoFactor || !data.emailOtpConfigured}
+              title={
+                !securityPassword
+                  ? "Enter current password first"
+                  : !agreeEmailTwoFactor
+                    ? "Check the email consent box first"
+                    : !data.emailOtpConfigured
+                      ? "Configure RESEND_API_KEY and EMAIL_FROM first"
+                      : undefined
+              }
               onClick={() => void onSaveMethod(TWO_FACTOR_METHOD.EMAIL)}
             >
               Email code

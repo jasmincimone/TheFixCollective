@@ -22,6 +22,8 @@ model User {
   twoFactorMethod    String    @default("NONE")
   /// When set, user agreed to receive SMS for security (verification & sign-in codes).
   consentSmsTwoFactorAt DateTime?
+  /// When set, user agreed to receive security one-time codes by email for sign-in.
+  consentEmailTwoFactorAt DateTime?
   /// Acknowledged SMS/2FA terms at sign-up (before adding a phone).
   smsTwoFactorSignupConsentAt DateTime?
   /// Opt-in for marketing/promotional email and SMS from The Fix Collective.
