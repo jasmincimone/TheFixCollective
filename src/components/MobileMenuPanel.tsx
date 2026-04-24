@@ -57,20 +57,22 @@ export function MobileMenuPanel({ onClose, closeHref }: Props) {
           </section>
 
           <section className="mb-6">
-            <Link
-              href="/rootsync"
-              onClick={onClose}
-              className="block rounded-xl border border-fix-border/15 bg-fix-bg-muted px-3 py-2.5 text-sm font-semibold text-fix-heading hover:bg-fix-bg-muted/80"
-            >
-              RootSync menu
-            </Link>
-            <ul className="mt-2 grid gap-0.5">
+            <ul className="grid gap-0.5">
+              <li>
+                <Link
+                  href="/rootsync"
+                  onClick={onClose}
+                  className="block rounded-xl px-3 py-2 text-sm font-medium text-fix-link hover:bg-fix-bg-muted hover:text-fix-link-hover active:bg-fix-bg-muted active:text-fix-link-hover"
+                >
+                  RootSync
+                </Link>
+              </li>
               {PLATFORM_NAV_LINKS.filter((item) => item.href !== "/rootsync").map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
                     onClick={onClose}
-                    className="block rounded-xl px-3 py-2 text-sm font-medium text-fix-link hover:bg-fix-bg-muted hover:text-fix-link-hover"
+                    className="block rounded-xl px-3 py-2 text-sm font-medium text-fix-link hover:bg-fix-bg-muted hover:text-fix-link-hover active:bg-fix-bg-muted active:text-fix-link-hover"
                   >
                     {item.label}
                   </Link>
