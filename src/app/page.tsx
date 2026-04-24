@@ -38,6 +38,14 @@ export default function HomePage() {
               <ButtonLink href="/rootsync" variant="secondary" size="lg" className="uppercase tracking-wide">
                 👉 🌐 Enter RootSync Platform
               </ButtonLink>
+              <ButtonLink
+                href="/products/amara-plants-a-seed-kit"
+                variant="secondary"
+                size="lg"
+                className="uppercase tracking-wide"
+              >
+                👉 🌱✅ Buy The Amara Roots Sprout Check Kit
+              </ButtonLink>
             </div>
           </div>
 
