@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { FormFeedback } from "@/components/ui/FormFeedback";
 import { LegalConsentModal } from "@/components/LegalConsentModal";
+import { PASSWORD_POLICY_TEXT } from "@/lib/passwordPolicy";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -78,7 +79,8 @@ export default function SignupPage() {
         <h1 className="text-2xl font-semibold tracking-tight text-fix-heading">Create account</h1>
         <p className="mt-1 text-sm text-fix-text-muted">
           Create an account to view order history and download digital purchases. You can add a phone number later in
-          Account Settings to use SMS verification and SMS two-factor.
+          Account Settings to use SMS verification and SMS two-factor. New accounts use email verification codes at
+          sign in by default.
         </p>
         {!legalStepDone ? (
           <div className="mt-6 space-y-4">
@@ -130,12 +132,12 @@ export default function SignupPage() {
                 id="signup-password"
                 type="password"
                 required
-                minLength={8}
+                minLength={12}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-fix-border/20 bg-fix-surface px-3 py-2 text-fix-text focus:border-amber focus:outline-none focus:ring-1 focus:ring-amber"
               />
-              <p className="mt-0.5 text-xs text-fix-text-muted">At least 8 characters</p>
+              <p className="mt-0.5 text-xs text-fix-text-muted">{PASSWORD_POLICY_TEXT}</p>
             </div>
 
             <div className="rounded-lg border-2 border-amber/40 bg-amber/5 p-4">

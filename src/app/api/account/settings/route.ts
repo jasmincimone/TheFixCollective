@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 
 import { authOptions } from "@/lib/authOptions";
+import { verifyPassword } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isTwoFactorMethod, TWO_FACTOR_METHOD } from "@/lib/twoFactor";
 
@@ -54,6 +55,7 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const tfaRaw = body?.twoFactorMethod;
     const marketingRaw = body?.marketingOptIn;
+    const currentPassword = typeof body?.currentPassword === "string" ? body.currentPassword : "";
 
     const hasTfa = tfaRaw !== undefined && tfaRaw !== null;
     const hasMarketing = marketingRaw !== undefined && marketingRaw !== null;
@@ -67,14 +69,23 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (hasTfa) {
+      const u = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { passwordHash: true, phone: true, phoneVerifiedAt: true },
+      });
+      if (!u?.passwordHash) {
+        return NextResponse.json({ error: "Password sign-in is not set for this account." }, { status: 400 });
+      }
+      if (!currentPassword || !verifyPassword(currentPassword, u.passwordHash)) {
+        return NextResponse.json(
+          { error: "Enter your current password to change two-factor settings." },
+          { status: 401 }
+        );
+      }
       if (typeof tfaRaw !== "string" || !isTwoFactorMethod(tfaRaw)) {
         return NextResponse.json({ error: "Invalid twoFactorMethod." }, { status: 400 });
       }
       if (tfaRaw === TWO_FACTOR_METHOD.SMS) {
-        const u = await prisma.user.findUnique({
-          where: { id: session.user.id },
-          select: { phone: true, phoneVerifiedAt: true },
-        });
         if (!u?.phone || !u.phoneVerifiedAt) {
           return NextResponse.json(
             { error: "Verify your phone number before enabling SMS two-factor." },

@@ -60,8 +60,15 @@ export function MobileMenuPanel({ onClose, closeHref }: Props) {
             <h3 className="text-xs font-semibold uppercase tracking-wide text-fix-text-muted">
               RootSync
             </h3>
+            <Link
+              href="/platform"
+              onClick={onClose}
+              className="mt-2 block rounded-xl border border-fix-border/15 bg-fix-bg-muted px-3 py-2.5 text-sm font-semibold text-fix-heading hover:bg-fix-bg-muted/80"
+            >
+              RootSync platform
+            </Link>
             <ul className="mt-2 grid gap-0.5">
-              {PLATFORM_NAV_LINKS.map((item) => (
+              {PLATFORM_NAV_LINKS.filter((item) => item.href !== "/platform").map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}

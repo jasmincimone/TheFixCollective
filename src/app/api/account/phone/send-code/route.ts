@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { authOptions } from "@/lib/authOptions";
 import { generateOtpDigits, hashOtpCode } from "@/lib/auth-tokens";
+import { verifyPassword } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { normalizePhoneForSms } from "@/lib/phone";
 import { isSmsSendAvailable, sendSms } from "@/lib/sms";
@@ -29,6 +30,23 @@ export async function POST(request: NextRequest) {
       );
     }
     const marketingOptIn = body?.marketingOptIn === true;
+    const currentPassword = typeof body?.currentPassword === "string" ? body.currentPassword : "";
+    if (!currentPassword) {
+      return NextResponse.json(
+        { error: "Enter your current password to update phone security settings." },
+        { status: 401 }
+      );
+    }
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { passwordHash: true },
+    });
+    if (!user?.passwordHash) {
+      return NextResponse.json({ error: "Password sign-in is not set for this account." }, { status: 400 });
+    }
+    if (!verifyPassword(currentPassword, user.passwordHash)) {
+      return NextResponse.json({ error: "Current password is incorrect." }, { status: 401 });
+    }
     const phone = normalizePhoneForSms(typeof body?.phone === "string" ? body.phone : "");
     if (!phone) {
       return NextResponse.json(

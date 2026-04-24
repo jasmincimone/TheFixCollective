@@ -6,6 +6,7 @@ import { responseForPrismaError } from "@/lib/prismaHttpError";
 import { verifyPassword } from "@/lib/auth";
 import { generateOtpDigits, hashOtpCode } from "@/lib/auth-tokens";
 import { sendLoginOtpEmail } from "@/lib/email";
+import { ROLES } from "@/lib/roles";
 import { isSmsSendAvailable, sendSms } from "@/lib/sms";
 import { CHALLENGE_CHANNEL, CHALLENGE_PURPOSE, TWO_FACTOR_METHOD } from "@/lib/twoFactor";
 
@@ -27,7 +28,10 @@ export async function POST(request: NextRequest) {
     if (!verifyPassword(password, user.passwordHash)) {
       return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
     }
-    const tf = user.twoFactorMethod || TWO_FACTOR_METHOD.NONE;
+    const storedTf = user.twoFactorMethod || TWO_FACTOR_METHOD.NONE;
+    const tf = user.role === ROLES.ADMIN && storedTf === TWO_FACTOR_METHOD.NONE
+      ? TWO_FACTOR_METHOD.EMAIL
+      : storedTf;
     if (tf === TWO_FACTOR_METHOD.NONE) {
       return NextResponse.json({ skipTwoFactor: true });
     }

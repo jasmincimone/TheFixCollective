@@ -8,6 +8,7 @@ import { Container } from "@/components/Container";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { FormFeedback } from "@/components/ui/FormFeedback";
+import { PASSWORD_POLICY_TEXT } from "@/lib/passwordPolicy";
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -23,10 +24,6 @@ function ResetPasswordForm() {
     e.preventDefault();
     setError("");
     setSuccess("");
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return;
-    }
     if (password !== confirm) {
       setError("Passwords do not match.");
       return;
@@ -75,12 +72,13 @@ function ResetPasswordForm() {
               id="reset-password"
               type="password"
               required
-              minLength={8}
+              minLength={12}
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="mt-1 w-full rounded-lg border border-fix-border/20 bg-fix-surface px-3 py-2 text-fix-text focus:border-amber focus:outline-none focus:ring-1 focus:ring-amber"
             />
+            <p className="mt-0.5 text-xs text-fix-text-muted">{PASSWORD_POLICY_TEXT}</p>
           </div>
           <div>
             <label htmlFor="reset-confirm" className="block text-sm font-medium text-fix-text">
@@ -90,7 +88,7 @@ function ResetPasswordForm() {
               id="reset-confirm"
               type="password"
               required
-              minLength={8}
+              minLength={12}
               autoComplete="new-password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}

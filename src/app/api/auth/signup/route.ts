@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth";
 import { ROLES } from "@/lib/roles";
+import { validateStrongPassword } from "@/lib/passwordPolicy";
+import { TWO_FACTOR_METHOD } from "@/lib/twoFactor";
 
 export const runtime = "nodejs";
 
@@ -49,6 +51,10 @@ export async function POST(request: NextRequest) {
     if (!email?.trim() || !password) {
       return NextResponse.json({ error: "Email and password required" }, { status: 400 });
     }
+    const passwordError = validateStrongPassword(password);
+    if (passwordError) {
+      return NextResponse.json({ error: passwordError }, { status: 400 });
+    }
     if (agreeTerms !== true || agreePrivacy !== true) {
       return NextResponse.json(
         {
@@ -80,6 +86,7 @@ export async function POST(request: NextRequest) {
         passwordHash,
         name: name?.trim() || null,
         role: ROLES.CUSTOMER,
+        twoFactorMethod: TWO_FACTOR_METHOD.EMAIL,
         termsAcceptedAt: now,
         privacyAcceptedAt: now,
         smsTwoFactorSignupConsentAt: now,

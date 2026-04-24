@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { FormFeedback } from "@/components/ui/FormFeedback";
 import { normalizeOtpSixDigits } from "@/lib/auth-tokens";
+import { PASSWORD_POLICY_TEXT } from "@/lib/passwordPolicy";
 import { TWO_FACTOR_METHOD } from "@/lib/twoFactor";
 
 type SettingsState = {
@@ -60,6 +61,7 @@ export default function AccountSettingsPage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [securityPassword, setSecurityPassword] = useState("");
 
   const [phoneInput, setPhoneInput] = useState("");
   const [challengeId, setChallengeId] = useState<string | null>(null);
@@ -207,7 +209,7 @@ export default function AccountSettingsPage() {
       const res = await fetch("/api/account/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ twoFactorMethod }),
+        body: JSON.stringify({ twoFactorMethod, currentPassword: securityPassword }),
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -261,6 +263,7 @@ export default function AccountSettingsPage() {
           phone: phoneInput.trim(),
           agreeToSmsTwoFactor: true,
           marketingOptIn,
+          currentPassword: securityPassword,
         }),
       });
       const j = (await res.json().catch(() => ({}))) as {
@@ -336,7 +339,11 @@ export default function AccountSettingsPage() {
     setTfaMsg("");
     setRemovingPhone(true);
     try {
-      const res = await fetch("/api/account/phone/remove", { method: "POST" });
+      const res = await fetch("/api/account/phone/remove", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword: securityPassword }),
+      });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
         setTfaErr(typeof j.error === "string" ? j.error : "Could not remove phone.");
@@ -507,9 +514,9 @@ export default function AccountSettingsPage() {
                   setPasswordErr("");
                 }}
                 className={inputClass}
-                minLength={8}
+                minLength={12}
               />
-              <p className="mt-0.5 text-xs text-fix-text-muted">At least 8 characters</p>
+              <p className="mt-0.5 text-xs text-fix-text-muted">{PASSWORD_POLICY_TEXT}</p>
             </div>
             <div>
               <label htmlFor="pw-confirm" className="block text-sm font-medium text-fix-text">
@@ -526,7 +533,7 @@ export default function AccountSettingsPage() {
                   setPasswordErr("");
                 }}
                 className={inputClass}
-                minLength={8}
+                minLength={12}
               />
             </div>
             <FormFeedback success={passwordMsg || null} error={passwordErr || null} />
@@ -548,12 +555,30 @@ export default function AccountSettingsPage() {
             After your password, we&apos;ll ask for a one-time code. <strong>None</strong> resets two-factor to
             password-only sign-in.
           </p>
+          <div className="mt-4 max-w-md">
+            <label htmlFor="security-current-password" className="block text-sm font-medium text-fix-text">
+              Current password (required for security changes)
+            </label>
+            <input
+              id="security-current-password"
+              type="password"
+              autoComplete="current-password"
+              value={securityPassword}
+              onChange={(e) => {
+                setSecurityPassword(e.target.value);
+                setTfaErr("");
+                setTfaMsg("");
+              }}
+              className={inputClass}
+            />
+          </div>
           <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             <Button
               type="button"
               size="sm"
               variant={method === TWO_FACTOR_METHOD.NONE ? "primary" : "secondary"}
-              disabled={saving}
+              disabled={saving || !securityPassword}
+              title={!securityPassword ? "Enter current password first" : undefined}
               onClick={() => void onSaveMethod(TWO_FACTOR_METHOD.NONE)}
             >
               None
@@ -562,7 +587,8 @@ export default function AccountSettingsPage() {
               type="button"
               size="sm"
               variant={method === TWO_FACTOR_METHOD.EMAIL ? "primary" : "secondary"}
-              disabled={saving}
+              disabled={saving || !securityPassword}
+              title={!securityPassword ? "Enter current password first" : undefined}
               onClick={() => void onSaveMethod(TWO_FACTOR_METHOD.EMAIL)}
             >
               Email code
@@ -571,9 +597,9 @@ export default function AccountSettingsPage() {
               type="button"
               size="sm"
               variant={method === TWO_FACTOR_METHOD.SMS ? "primary" : "secondary"}
-              disabled={saving || !verified}
+              disabled={saving || !verified || !securityPassword}
               onClick={() => void onSaveMethod(TWO_FACTOR_METHOD.SMS)}
-              title={!verified ? "Verify a phone number first" : undefined}
+              title={!verified ? "Verify a phone number first" : !securityPassword ? "Enter current password first" : undefined}
             >
               SMS code
             </Button>
@@ -717,8 +743,14 @@ export default function AccountSettingsPage() {
                 type="button"
                 size="sm"
                 variant="secondary"
-                disabled={sending || !agreeSmsTwoFactor}
-                title={!agreeSmsTwoFactor ? "Check the box to agree to security SMS first" : undefined}
+                disabled={sending || !agreeSmsTwoFactor || !securityPassword}
+                title={
+                  !agreeSmsTwoFactor
+                    ? "Check the box to agree to security SMS first"
+                    : !securityPassword
+                      ? "Enter current password first"
+                      : undefined
+                }
                 onClick={() => void onSendCode()}
               >
                 {sending ? "Sending…" : "Send verification code"}
@@ -728,7 +760,8 @@ export default function AccountSettingsPage() {
                   type="button"
                   size="sm"
                   variant="secondary"
-                  disabled={removingPhone}
+                  disabled={removingPhone || !securityPassword}
+                  title={!securityPassword ? "Enter current password first" : undefined}
                   onClick={() => void onRemovePhone()}
                 >
                   {removingPhone ? "Removing…" : "Remove phone"}
