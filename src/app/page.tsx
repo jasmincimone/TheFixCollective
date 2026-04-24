@@ -2,16 +2,20 @@ import Link from "next/link";
 import { Leaf } from "lucide-react";
 
 import { Container } from "@/components/Container";
+import { FeaturedListingCard } from "@/components/FeaturedListingCard";
 import { Card } from "@/components/ui/Card";
 import { ButtonLink } from "@/components/ui/Button";
 import { ShopLogo } from "@/components/ShopLogo";
+import { AMARA_KIT_CATALOG_ID } from "@/config/featuredCatalog";
 import { SHOPS } from "@/config/shops";
+import { getMergedProductForPublic } from "@/lib/shopCatalog";
 
 /** Avoid stale cached HTML if a CDN or older build served the previous two-column hero. */
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default function HomePage() {
+export default async function HomePage() {
+  const amaraKit = await getMergedProductForPublic(AMARA_KIT_CATALOG_ID);
   return (
     <div>
       <section className="border-b border-fix-border/15 bg-fix-bg-muted/40">
@@ -39,13 +43,14 @@ export default function HomePage() {
                 👉 🌐 Enter RootSync Platform
               </ButtonLink>
               <ButtonLink
-                href="/products/amara-plants-a-seed-kit"
+                href={`/products/${AMARA_KIT_CATALOG_ID}`}
                 variant="secondary"
                 size="lg"
                 className="uppercase tracking-wide"
               >
                 👉 🌱✅ Buy The Amara Roots Sprout Check Kit
               </ButtonLink>
+              {amaraKit ? <FeaturedListingCard product={amaraKit} /> : null}
             </div>
           </div>
 

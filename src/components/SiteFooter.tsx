@@ -69,7 +69,7 @@ export function SiteFooter() {
 
         <div className="mt-10 flex flex-col gap-2 border-t border-fix-border/15 pt-6 text-xs text-fix-text-muted sm:flex-row sm:items-center sm:justify-between">
           <div>
-            © {new Date().getFullYear()} RootSync, Inc., powered by The Fix Collective, LLC.
+            © 2026 The Fix Collective, LLC. powered by RootSync.io
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-2">
             <Link href="/about" className="hover:text-fix-heading">

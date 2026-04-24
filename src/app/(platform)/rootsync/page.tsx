@@ -23,6 +23,14 @@ export default function RootSyncPlatformPage() {
           />
         </div>
 
+        <div className="mx-auto mt-8 max-w-3xl text-center">
+          <h1 className="text-3xl font-semibold tracking-tight text-fix-heading sm:text-4xl">RootSync</h1>
+          <p className="mt-3 text-base leading-relaxed text-fix-text-muted sm:text-lg">
+            Explore every part of the ecosystem. Click a feature icon to see details and jump to that section
+            of the platform.
+          </p>
+        </div>
+
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <ButtonLink href="/signup" variant="cta" size="md" className="min-w-[150px] justify-center">
             Sign up
@@ -30,14 +38,6 @@ export default function RootSyncPlatformPage() {
           <ButtonLink href="/about" variant="secondary" size="md" className="min-w-[150px] justify-center">
             About us
           </ButtonLink>
-        </div>
-
-        <div className="mx-auto mt-12 max-w-4xl text-center">
-          <h1 className="text-3xl font-semibold tracking-tight text-fix-heading sm:text-4xl">RootSync</h1>
-          <p className="mt-3 text-base leading-relaxed text-fix-text-muted">
-            Explore every part of the ecosystem. Click a feature icon to see details and jump to that section
-            of the platform.
-          </p>
         </div>
 
         <PlatformFeaturesExplorer />
