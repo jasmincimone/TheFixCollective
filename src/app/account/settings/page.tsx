@@ -109,6 +109,7 @@ export default function AccountSettingsPage() {
     setPhoneInput(j.phone || "");
     setMarketingOptIn(Boolean(j.marketingOptIn));
     setAgreeEmailTwoFactor(Boolean(j.consentEmailTwoFactorAt));
+    setAgreeSmsTwoFactor(Boolean(j.consentSmsTwoFactorAt));
     setNewEmail("");
     setEmailPassword("");
   }, []);
@@ -372,6 +373,10 @@ export default function AccountSettingsPage() {
 
   const method = data?.twoFactorMethod || TWO_FACTOR_METHOD.NONE;
   const verified = Boolean(data?.phoneVerifiedAt && data?.phone);
+  const hasSecurityOtpConsent =
+    agreeEmailTwoFactor ||
+    Boolean(data?.consentEmailTwoFactorAt) ||
+    Boolean(data?.consentSmsTwoFactorAt);
 
   if (loadError) {
     return <FormFeedback error={loadError} />;
@@ -586,24 +591,10 @@ export default function AccountSettingsPage() {
               className={inputClass}
             />
           </div>
-          <div className="mt-3 max-w-lg rounded-lg border border-fix-border/20 bg-fix-bg-muted/40 p-3">
-            <label className="flex cursor-pointer items-start gap-3 text-sm leading-snug text-fix-text">
-              <input
-                type="checkbox"
-                checked={agreeEmailTwoFactor}
-                onChange={(e) => {
-                  setAgreeEmailTwoFactor(e.target.checked);
-                  setTfaErr("");
-                  setTfaMsg("");
-                }}
-                className="mt-0.5 h-4 w-4 shrink-0 rounded border-fix-border/40 text-amber focus:ring-amber"
-              />
-              <span>
-                I agree to receive one-time security sign-in codes by email when Email code two-factor
-                authentication is enabled.
-              </span>
-            </label>
-          </div>
+          <p className="mt-3 max-w-lg text-xs text-fix-text-muted">
+            To use <strong>Email code</strong> sign-in, agree to security codes by email below (or complete SMS
+            verification with SMS security consent—either counts for now).
+          </p>
           <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             <Button
               type="button"
@@ -619,12 +610,12 @@ export default function AccountSettingsPage() {
               type="button"
               size="sm"
               variant={method === TWO_FACTOR_METHOD.EMAIL ? "primary" : "secondary"}
-              disabled={saving || !securityPassword || !agreeEmailTwoFactor || !data.emailOtpConfigured}
+              disabled={saving || !securityPassword || !hasSecurityOtpConsent || !data.emailOtpConfigured}
               title={
                 !securityPassword
                   ? "Enter current password first"
-                  : !agreeEmailTwoFactor
-                    ? "Check the email consent box first"
+                  : !hasSecurityOtpConsent
+                    ? "Agree to email or SMS security codes below first"
                     : !data.emailOtpConfigured
                       ? "Configure RESEND_API_KEY and EMAIL_FROM first"
                       : undefined
@@ -652,8 +643,8 @@ export default function AccountSettingsPage() {
         <Card className="p-5 ring-1 ring-fix-border/30">
           <h3 className="text-sm font-semibold text-fix-heading">Phone number &amp; SMS consent</h3>
           <p className="mt-2 text-sm text-fix-text-muted">
-            Add a phone number to use SMS verification and SMS two-factor. Confirm the two consent boxes below
-            first—then enter your number and request a code.
+            Add a phone number to use SMS verification and SMS two-factor. Review the agreements in the highlighted
+            box first—then enter your number and request a code.
           </p>
           {data.smsTwoFactorSignupConsentAt ? (
             <p className="mt-2 text-xs text-fix-text-muted">
@@ -661,7 +652,12 @@ export default function AccountSettingsPage() {
             </p>
           ) : null}
           <div className="mt-4 max-w-lg space-y-3 rounded-lg border-2 border-amber/40 bg-amber/5 p-4">
-            <p className="text-sm font-semibold text-fix-heading">Required consent before we text you</p>
+            <p className="text-sm font-semibold text-fix-heading">Security codes: email and SMS consent</p>
+            <p className="text-xs leading-relaxed text-fix-text-muted">
+              One-time sign-in codes go to your email or phone depending on your two-factor method. For now, agreeing to{" "}
+              <strong>either</strong> email or SMS security messages satisfies the requirement for email-code sign-in;
+              you can record both if you use both channels.
+            </p>
             <label className="flex cursor-pointer items-start gap-3 text-sm leading-snug text-fix-text">
               <input
                 type="checkbox"
@@ -676,6 +672,22 @@ export default function AccountSettingsPage() {
               <span>
                 I agree to receive SMS/text messages for <strong>account security</strong> (phone verification and sign-in
                 codes) and two-factor authentication when enabled. Message and data rates may apply.
+              </span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-3 text-sm leading-snug text-fix-text">
+              <input
+                type="checkbox"
+                checked={agreeEmailTwoFactor}
+                onChange={(e) => {
+                  setAgreeEmailTwoFactor(e.target.checked);
+                  setTfaErr("");
+                  setTfaMsg("");
+                }}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-fix-border/40 text-amber focus:ring-amber"
+              />
+              <span>
+                I agree to receive <strong>one-time security sign-in codes by email</strong> when email two-factor is
+                enabled or when we send a code to your sign-in address for account security.
               </span>
             </label>
             <label className="flex cursor-pointer items-start gap-3 text-sm leading-snug text-fix-text">

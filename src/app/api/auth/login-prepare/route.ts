@@ -53,11 +53,13 @@ export async function POST(request: NextRequest) {
         { status: 403 }
       );
     }
-    if (tf === TWO_FACTOR_METHOD.EMAIL && !user.consentEmailTwoFactorAt) {
+    const hasEmailOtpConsent =
+      Boolean(user.consentEmailTwoFactorAt) || Boolean(user.consentSmsTwoFactorAt);
+    if (tf === TWO_FACTOR_METHOD.EMAIL && !hasEmailOtpConsent) {
       return NextResponse.json(
         {
           error:
-            "Email sign-in codes require consent. Sign in, open Account Settings, check the email security consent box, and enable Email code again.",
+            "Security sign-in codes by email require consent. Open Account → Settings and agree to receive security codes by email or SMS (either is enough for now), then try again.",
         },
         { status: 403 }
       );

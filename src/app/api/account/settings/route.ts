@@ -80,6 +80,7 @@ export async function PATCH(request: NextRequest) {
           phone: true,
           phoneVerifiedAt: true,
           consentEmailTwoFactorAt: true,
+          consentSmsTwoFactorAt: true,
         },
       });
       if (!u?.passwordHash) {
@@ -102,11 +103,13 @@ export async function PATCH(request: NextRequest) {
           );
         }
       }
-      if (tfaRaw === TWO_FACTOR_METHOD.EMAIL && !agreeEmailTwoFactor && !u?.consentEmailTwoFactorAt) {
+      const hasSecurityOtpConsent =
+        Boolean(u?.consentEmailTwoFactorAt) || Boolean(u?.consentSmsTwoFactorAt);
+      if (tfaRaw === TWO_FACTOR_METHOD.EMAIL && !agreeEmailTwoFactor && !hasSecurityOtpConsent) {
         return NextResponse.json(
           {
             error:
-              "You must agree to receive security one-time codes by email before enabling email two-factor.",
+              "Agree to receive security one-time codes by email, or verify a phone and agree to SMS security messages first (either is enough for now).",
           },
           { status: 400 }
         );
