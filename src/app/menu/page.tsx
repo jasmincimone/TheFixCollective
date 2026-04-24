@@ -54,14 +54,11 @@ export default function MenuPage() {
             </section>
 
             <section className="mb-6">
-              <h2 className="text-xs font-semibold uppercase tracking-wide text-fix-text-muted">
-                RootSync
-              </h2>
               <Link
                 href="/rootsync"
-                className="mt-2 block rounded-xl border border-fix-border/15 bg-fix-bg-muted px-3 py-2.5 text-sm font-semibold text-fix-heading hover:bg-fix-bg-muted/80"
+                className="block rounded-xl border border-fix-border/15 bg-fix-bg-muted px-3 py-2.5 text-sm font-semibold text-fix-heading hover:bg-fix-bg-muted/80"
               >
-                RootSync platform
+                RootSync menu
               </Link>
               <ul className="mt-2 grid gap-0.5">
                 {PLATFORM_NAV_LINKS.filter((item) => item.href !== "/rootsync").map((item) => (
