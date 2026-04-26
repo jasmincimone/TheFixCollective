@@ -100,9 +100,18 @@ export function ConnectDemoDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ accountId: existingAccountId }),
       });
-      const data = await res.json();
+      let data: { error?: string; message?: string; hint?: string } = {};
+      try {
+        data = (await res.json()) as typeof data;
+      } catch {
+        setError(
+          `Link failed (HTTP ${res.status}). The server response was not JSON — check the terminal / network tab.`
+        );
+        return;
+      }
       if (!res.ok) {
-        setError(data.error || "Failed to link existing account.");
+        const parts = [data.error, data.hint].filter((x): x is string => Boolean(x && x.trim()));
+        setError(parts.length ? parts.join(" ") : "Failed to link existing account.");
         return;
       }
       setMessage(data.message || "Connected account linked.");

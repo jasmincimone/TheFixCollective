@@ -3,6 +3,31 @@ import type Stripe from "stripe";
 import { getStripeClient } from "@/lib/stripe";
 
 /**
+ * Extracts `acct_...` from pasted dashboard URLs or trims accidental quotes/whitespace.
+ */
+export function normalizeStripeConnectAccountId(raw: string): string {
+  let s = raw.trim();
+  if (
+    (s.startsWith('"') && s.endsWith('"')) ||
+    (s.startsWith("'") && s.endsWith("'"))
+  ) {
+    s = s.slice(1, -1).trim();
+  }
+  const fromUrl = s.match(/acct_[a-zA-Z0-9]+/);
+  if (fromUrl) return fromUrl[0];
+  return s;
+}
+
+export function stripeConnectErrorMessage(err: unknown): string {
+  if (err && typeof err === "object" && "type" in err && "message" in err) {
+    const m = (err as { message?: string }).message;
+    if (typeof m === "string" && m.trim()) return m;
+  }
+  if (err instanceof Error) return err.message;
+  return "Unknown error.";
+}
+
+/**
  * Demo-only defaults.
  * Replace these values in your own implementation once you wire real config.
  */
