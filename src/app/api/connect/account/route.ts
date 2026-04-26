@@ -65,36 +65,56 @@ export async function POST(request: NextRequest) {
       : user.email;
 
   const stripeClient = getConnectStripeClient();
-  const account = await stripeClient.v2.core.accounts.create({
-    display_name: displayName,
-    contact_email: contactEmail,
-    identity: {
-      country: getDefaultCountry(),
-    },
-    dashboard: "full",
-    defaults: {
-      responsibilities: {
-        fees_collector: "stripe",
-        losses_collector: "stripe",
+  try {
+    const account = await stripeClient.v2.core.accounts.create({
+      display_name: displayName,
+      contact_email: contactEmail,
+      identity: {
+        country: getDefaultCountry(),
       },
-    },
-    configuration: {
-      customer: {},
-      merchant: {
-        capabilities: {
-          card_payments: {
-            requested: true,
+      dashboard: "full",
+      defaults: {
+        responsibilities: {
+          fees_collector: "stripe",
+          losses_collector: "stripe",
+        },
+      },
+      configuration: {
+        customer: {},
+        merchant: {
+          capabilities: {
+            card_payments: {
+              requested: true,
+            },
           },
         },
       },
-    },
-  });
+    });
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: { stripeConnectAccountId: account.id },
-  });
+    try {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { stripeConnectAccountId: account.id },
+      });
+    } catch {
+      // Recovery path: account exists in Stripe but local mapping failed.
+      return NextResponse.json(
+        {
+          error:
+            `Connected account ${account.id} was created in Stripe, but saving local mapping failed. ` +
+            "Use POST /api/connect/account/link with this accountId to recover.",
+          recoverableAccountId: account.id,
+        },
+        { status: 500 }
+      );
+    }
 
-  const onboarding = await fetchConnectAccountStatus(account.id);
-  return NextResponse.json({ accountId: account.id, onboarding }, { status: 201 });
+    const onboarding = await fetchConnectAccountStatus(account.id);
+    return NextResponse.json({ accountId: account.id, onboarding }, { status: 201 });
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Failed to create connected account." },
+      { status: 500 }
+    );
+  }
 }

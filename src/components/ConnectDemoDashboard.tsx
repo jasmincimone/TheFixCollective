@@ -30,6 +30,7 @@ export function ConnectDemoDashboard() {
 
   const [displayName, setDisplayName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
+  const [existingAccountId, setExistingAccountId] = useState("");
   const [productName, setProductName] = useState("");
   const [productDescription, setProductDescription] = useState("");
   const [productPrice, setProductPrice] = useState("2500");
@@ -72,6 +73,10 @@ export function ConnectDemoDashboard() {
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "Failed to create connected account.");
+        if (typeof data.recoverableAccountId === "string") {
+          setExistingAccountId(data.recoverableAccountId);
+          setMessage("A Stripe account was created. Paste/link it below to recover local mapping.");
+        }
         return;
       }
       setMessage("Connected account ready.");
@@ -80,6 +85,31 @@ export function ConnectDemoDashboard() {
       await loadAccount();
     } catch {
       setError("Failed to create connected account.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function linkExistingAccount() {
+    setSaving(true);
+    setError("");
+    setMessage("");
+    try {
+      const res = await fetch("/api/connect/account/link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accountId: existingAccountId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to link existing account.");
+        return;
+      }
+      setMessage(data.message || "Connected account linked.");
+      setExistingAccountId("");
+      await loadAccount();
+    } catch {
+      setError("Failed to link existing account.");
     } finally {
       setSaving(false);
     }
@@ -211,6 +241,27 @@ export function ConnectDemoDashboard() {
             >
               Create connected account
             </button>
+            <div className="mt-2 rounded-lg border border-fix-border/20 bg-fix-bg-muted/40 p-3">
+              <p className="text-xs text-fix-text-muted">
+                Already created an account in Stripe but it is not linked here? Paste the <code>acct_...</code> id.
+              </p>
+              <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                <input
+                  className="w-full rounded-lg border border-fix-border/25 bg-fix-surface px-3 py-2 text-sm"
+                  placeholder="acct_..."
+                  value={existingAccountId}
+                  onChange={(e) => setExistingAccountId(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => void linkExistingAccount()}
+                  disabled={saving || !existingAccountId.trim()}
+                  className="inline-flex h-10 items-center justify-center rounded-full border border-fix-border/30 bg-fix-surface px-4 text-sm font-medium text-fix-heading hover:bg-fix-bg-muted disabled:opacity-50"
+                >
+                  Link existing account
+                </button>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="mt-4 flex flex-wrap gap-2">
