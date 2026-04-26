@@ -42,7 +42,7 @@ export function FeaturedListingCard({ product, className }: Props) {
               className="h-full w-full"
             />
           </div>
-          <div className="flex flex-col justify-center p-4 sm:py-4 sm:pl-0 sm:pr-4">
+          <div className="flex flex-col justify-center py-4 pl-8 pr-4 sm:py-5 sm:pl-10 sm:pr-5">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-amber">
               Featured listing
             </span>

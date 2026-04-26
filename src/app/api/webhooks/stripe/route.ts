@@ -1,53 +1,147 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { getStripe } from "@/lib/stripe";
+
 import { prisma } from "@/lib/prisma";
+import {
+  getConnectStripeClient,
+  hasStripeSig,
+  isSubscriptionEventType,
+  parseThinEventOrThrow,
+  requireEnv,
+  toDateOrNull,
+} from "@/lib/stripeConnectDemo";
 
+/**
+ * Single webhook endpoint handling:
+ * - Existing checkout session completion updates
+ * - Billing/subscription lifecycle events
+ * - Stripe Connect v2 thin events for account requirement/capability updates
+ */
 export async function POST(request: NextRequest) {
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!secret) {
-    console.error("STRIPE_WEBHOOK_SECRET is not set");
-    return NextResponse.json({ error: "Webhook not configured" }, { status: 500 });
-  }
-
+  const stripeClient = getConnectStripeClient();
   const body = await request.text();
-  const sig = request.headers.get("stripe-signature");
+  const sig = hasStripeSig(request.headers);
+
   if (!sig) {
-    return NextResponse.json({ error: "Missing signature" }, { status: 400 });
+    return NextResponse.json({ error: "Missing stripe-signature header" }, { status: 400 });
   }
 
+  // ---- 1) Try Connect v2 thin-event parsing first (for account updates) ----
+  // You can use a dedicated secret for thin events, or reuse STRIPE_WEBHOOK_SECRET.
+  const thinSecret = process.env.STRIPE_THIN_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
+  if (thinSecret) {
+    try {
+      const thinEvent = parseThinEventOrThrow({
+        stripeClient,
+        body,
+        signature: sig,
+        webhookSecret: thinSecret,
+      });
+
+      // Retrieve the full event details after parsing thin event envelope.
+      const fullEvent = await stripeClient.v2.core.events.retrieve(thinEvent.id);
+      await handleThinConnectV2Event(fullEvent as unknown as { id: string; type: string; data?: { object?: { id?: string } } });
+      return NextResponse.json({ received: true, mode: "thin", type: thinEvent.type });
+    } catch {
+      // Not a thin event (or parse method unavailable) -> continue to standard webhook parse.
+    }
+  }
+
+  // ---- 2) Parse regular webhook events (subscriptions + existing checkout flow) ----
   let event: Stripe.Event;
   try {
-    event = getStripe().webhooks.constructEvent(body, sig, secret);
+    const webhookSecret = requireEnv("STRIPE_WEBHOOK_SECRET");
+    event = stripeClient.webhooks.constructEvent(body, sig, webhookSecret);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
+    const message = err instanceof Error ? err.message : "Unknown webhook signature error";
     console.error("Webhook signature verification failed:", message);
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
   if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
-    const orderId = session.metadata?.orderId;
-    if (!orderId) {
-      console.error("No orderId in session metadata");
-      return NextResponse.json({ received: true });
-    }
-
-    try {
-      await prisma.order.update({
-        where: { id: orderId },
-        data: {
-          status: "paid",
-          stripeSessionId: session.id,
-          stripePaymentIntent:
-            typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null,
-        },
-      });
-    } catch (e) {
-      console.error("Failed to update order after payment:", e);
-      return NextResponse.json({ error: "Failed to update order" }, { status: 500 });
-    }
+    await handleLegacyCheckoutCompleted(event);
+  } else if (isSubscriptionEventType(event.type)) {
+    await handleSubscriptionAndBillingEvent(event);
   }
 
-  return NextResponse.json({ received: true });
+  return NextResponse.json({ received: true, mode: "standard", type: event.type });
+}
+
+async function handleLegacyCheckoutCompleted(event: Stripe.Event) {
+  const session = event.data.object as Stripe.Checkout.Session;
+  const orderId = session.metadata?.orderId;
+  if (!orderId) return;
+
+  await prisma.order.update({
+    where: { id: orderId },
+    data: {
+      status: "paid",
+      stripeSessionId: session.id,
+      stripePaymentIntent:
+        typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null,
+    },
+  });
+}
+
+async function handleSubscriptionAndBillingEvent(event: Stripe.Event) {
+  /**
+   * V2 account subscriptions can expose `customer_account` as the connected account id (`acct_...`).
+   * We cast to a narrow shape to keep the sample readable.
+   */
+  const obj = event.data.object as Stripe.Event.Data.Object & {
+    customer_account?: string;
+    items?: { data?: Array<{ price?: { id?: string } }> };
+    status?: string;
+    current_period_end?: number | null;
+  };
+
+  // For payment method / billing portal / customer profile events we log only in this sample.
+  if (event.type !== "customer.subscription.updated" && event.type !== "customer.subscription.deleted") {
+    console.info("[stripe webhook]", event.type, "received");
+    // TODO: Write customer billing profile/payment method updates to DB as needed.
+    return;
+  }
+
+  const accountId = obj.customer_account;
+  if (!accountId?.startsWith("acct_")) {
+    console.warn("Subscription event missing customer_account acct id:", event.id, event.type);
+    return;
+  }
+
+  const priceId = obj.items?.data?.[0]?.price?.id ?? null;
+  const status = event.type === "customer.subscription.deleted" ? "canceled" : obj.status ?? "unknown";
+  const periodEnd = toDateOrNull(obj.current_period_end ?? null);
+
+  // Store sample subscription state against the mapped user.
+  // If no user mapping exists yet, keep this as a harmless no-op.
+  await prisma.user.updateMany({
+    where: { stripeConnectAccountId: accountId },
+    data: {
+      stripeSubscriptionStatus: status,
+      stripeSubscriptionPriceId: priceId,
+      stripeSubscriptionCurrentPeriodEnd: periodEnd,
+    },
+  });
+}
+
+async function handleThinConnectV2Event(event: {
+  id: string;
+  type: string;
+  data?: { object?: { id?: string } };
+}) {
+  const accountId = event.data?.object?.id;
+  switch (event.type) {
+    case "v2.core.account[requirements].updated":
+      console.info("[thin] requirements changed for account", accountId || "(unknown)");
+      // TODO: notify the account owner in-app/email that they should revisit onboarding.
+      break;
+    case "v2.core.account[configuration.merchant].capability_status_updated":
+    case "v2.core.account[configuration.customer].capability_status_updated":
+    case "v2.core.account[.recipient].capability_status_updated":
+      console.info("[thin] capability status changed for account", accountId || "(unknown)");
+      // TODO: refresh account readiness state in DB if you need cached status.
+      break;
+    default:
+      console.info("[thin] unhandled v2 event type", event.type);
+  }
 }

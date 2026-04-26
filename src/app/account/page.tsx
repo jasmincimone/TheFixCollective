@@ -60,6 +60,18 @@ export default async function AccountPage() {
           </div>
         </Card>
 
+        <Card className="p-5">
+          <div className="text-sm font-semibold text-fix-heading">Stripe Connect demo</div>
+          <p className="mt-2 text-sm text-fix-text-muted">
+            Sample connected account onboarding, product creation, storefront checkout, and subscriptions.
+          </p>
+          <div className="mt-4">
+            <ButtonLink href="/account/connect-demo" variant="secondary" size="sm">
+              Open Connect demo
+            </ButtonLink>
+          </div>
+        </Card>
+
         {vs == null && (
           <Card className="p-5 sm:col-span-2">
             <div className="text-sm font-semibold text-fix-heading">Sell on the marketplace</div>

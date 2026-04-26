@@ -7,7 +7,10 @@ import { useSession } from "next-auth/react";
 import { useContext, useMemo, useState } from "react";
 
 import { CartContext } from "@/context/CartContext";
-import { PLATFORM_NAV_LINKS } from "@/config/platformNav";
+import {
+  isPlatformHeaderRootsyncSectionActive,
+  PLATFORM_HEADER_ROOTSYNC_MENU_LINKS,
+} from "@/config/platformNav";
 import { SHOPS } from "@/config/shops";
 import { cn } from "@/lib/cn";
 import { rememberPathBeforeCart } from "@/lib/cartReturn";
@@ -26,6 +29,7 @@ export function SiteHeader() {
   const router = useRouter();
   const { data: session, status: sessionStatus } = useSession();
   const [shopsOpen, setShopsOpen] = useState(false);
+  const [rootsyncOpen, setRootsyncOpen] = useState(false);
   const cart = useContext(CartContext);
   const cartCount = cart?.itemCount ?? 0;
 
@@ -103,10 +107,16 @@ export function SiteHeader() {
               )}
               aria-haspopup="menu"
               aria-expanded={shopsOpen}
-              onClick={() => setShopsOpen((v) => !v)}
-              onMouseEnter={() => setShopsOpen(true)}
+              onClick={() => {
+                setRootsyncOpen(false);
+                setShopsOpen((v) => !v);
+              }}
+              onMouseEnter={() => {
+                setRootsyncOpen(false);
+                setShopsOpen(true);
+              }}
             >
-              Shops
+              The Fix Shops
               <span
                 className={cn(
                   "text-[10px] transition-transform",
@@ -151,19 +161,68 @@ export function SiteHeader() {
               </div>
             ) : null}
           </div>
-          {PLATFORM_NAV_LINKS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
+
+          <div className="relative" onMouseLeave={() => setRootsyncOpen(false)}>
+            <button
+              type="button"
               className={cn(
-                "rounded-full px-3 py-2 text-sm text-fix-text hover:bg-fix-bg-muted hover:text-fix-heading",
-                isActive(pathname, item.href) &&
-                  "bg-fix-bg-muted text-fix-heading font-medium"
+                "inline-flex items-center gap-1 rounded-full px-3 py-2 text-sm text-fix-text hover:bg-fix-bg-muted hover:text-fix-heading focus:outline-none focus-visible:ring-2 focus-visible:ring-fix-cta focus-visible:ring-offset-2",
+                isPlatformHeaderRootsyncSectionActive(pathname) && "bg-fix-bg-muted text-fix-heading"
               )}
+              aria-haspopup="menu"
+              aria-expanded={rootsyncOpen}
+              onClick={() => {
+                setShopsOpen(false);
+                setRootsyncOpen((v) => !v);
+              }}
+              onMouseEnter={() => {
+                setShopsOpen(false);
+                setRootsyncOpen(true);
+              }}
             >
-              {item.label}
-            </Link>
-          ))}
+              RootSync
+              <span
+                className={cn(
+                  "text-[10px] transition-transform",
+                  rootsyncOpen && "rotate-180"
+                )}
+              >
+                ▾
+              </span>
+            </button>
+            {rootsyncOpen ? (
+              <div
+                className="absolute left-0 top-full z-40 w-72 pt-2"
+                role="menu"
+                onMouseEnter={() => setRootsyncOpen(true)}
+              >
+                <div className="rounded-2xl border border-fix-border/15 bg-fix-surface p-2 shadow-soft">
+                  <Link
+                    href="/rootsync"
+                    className="block rounded-xl px-3 py-2 text-xs font-semibold uppercase tracking-wide text-fix-text-muted hover:bg-fix-bg-muted"
+                    onClick={() => setRootsyncOpen(false)}
+                  >
+                    View RootSync platform
+                  </Link>
+                  <div className="mt-1 grid gap-1">
+                    {PLATFORM_HEADER_ROOTSYNC_MENU_LINKS.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setRootsyncOpen(false)}
+                        className={cn(
+                          "block rounded-xl px-3 py-2 text-sm text-fix-link hover:bg-fix-bg-muted hover:text-fix-link-hover",
+                          isActive(pathname, item.href) && "bg-fix-bg-muted font-medium text-fix-heading"
+                        )}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </div>
         </nav>
 
         <div className="flex items-center gap-2">

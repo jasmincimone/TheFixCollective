@@ -29,6 +29,14 @@ model User {
   /// Opt-in for marketing/promotional email and SMS from The Fix Collective.
   marketingOptIn     Boolean   @default(false)
   marketingOptInAt     DateTime?
+  /// Stripe Connect v2 account ID (`acct_...`) used for onboarding and direct charges.
+  stripeConnectAccountId String? @unique
+  /// Last known subscription status from billing webhooks (sample storage for demo).
+  stripeSubscriptionStatus String?
+  /// Last known subscribed price id from billing webhooks.
+  stripeSubscriptionPriceId String?
+  /// Last known subscription period end from billing webhooks.
+  stripeSubscriptionCurrentPeriodEnd DateTime?
   /// Accepted Terms & Conditions (e.g. at sign-up).
   termsAcceptedAt    DateTime?
   /// Accepted Privacy Policy (e.g. at sign-up).

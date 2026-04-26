@@ -1,21 +1,27 @@
 import Stripe from "stripe";
 
-const API_VERSION: Stripe.LatestApiVersion = "2023-10-16";
-
 let cached: Stripe | null = null;
 
 /**
- * Returns a Stripe client. Use only inside API routes / server handlers.
- * Throws at call time (not import time) if STRIPE_SECRET_KEY is missing so
- * Next.js can build and prerender without Stripe env vars.
+ * Returns a Stripe client (named `stripeClient` in calling code).
+ *
+ * IMPORTANT:
+ * - Fill `STRIPE_SECRET_KEY` in your environment before using this sample.
+ * - We intentionally do NOT hardcode `apiVersion` here. The Stripe SDK will
+ *   use its current default API version automatically.
  */
-export function getStripe(): Stripe {
+export function getStripeClient(): Stripe {
   const secret = process.env.STRIPE_SECRET_KEY;
   if (!secret) {
-    throw new Error("STRIPE_SECRET_KEY is not set");
+    throw new Error(
+      "STRIPE_SECRET_KEY is not set. Add STRIPE_SECRET_KEY=sk_test_... to .env.local and restart the dev server."
+    );
   }
   if (!cached) {
-    cached = new Stripe(secret, { apiVersion: API_VERSION });
+    cached = new Stripe(secret);
   }
   return cached;
 }
+
+/** Backwards-compatible alias for existing routes already using `getStripe()`. */
+export const getStripe = getStripeClient;
