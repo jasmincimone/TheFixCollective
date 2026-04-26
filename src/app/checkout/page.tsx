@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useCallback, useState } from "react";
 
 import { useCart } from "@/context/CartContext";
@@ -13,7 +13,6 @@ import { FormFeedback } from "@/components/ui/FormFeedback";
 const SHIPPING_CENTS = 599;
 
 export default function CheckoutPage() {
-  const router = useRouter();
   const { items, itemCount, clearCart, resolveProduct } = useCart();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -122,9 +121,9 @@ export default function CheckoutPage() {
         <h1 className="text-3xl font-semibold tracking-tight text-fix-heading">Checkout</h1>
         <p className="mt-4 text-fix-text-muted">Your cart is empty. Add items to checkout.</p>
         <div className="mt-6">
-          <a href="/shops" className="text-fix-link hover:text-fix-link-hover hover:underline">
+          <Link href="/shops" className="text-fix-link hover:text-fix-link-hover hover:underline">
             Continue shopping →
-          </a>
+          </Link>
         </div>
       </Container>
     );

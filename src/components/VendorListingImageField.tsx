@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ImagePlus, Loader2, X } from "lucide-react";
+import { ImagePlus, Loader2 } from "lucide-react";
 
 import { FormFeedback } from "@/components/ui/FormFeedback";
 

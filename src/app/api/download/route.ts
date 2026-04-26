@@ -39,9 +39,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
-  // Resolve file: add files to public/downloads/{productId}.pdf (or .zip etc.)
   const baseUrl = process.env.NEXTAUTH_URL || request.nextUrl.origin;
-  const filePath = `/downloads/${item.productId}.pdf`;
+  // When real files exist: serve from `/downloads/${item.productId}.pdf` in public/.
 
   // Redirect to file if it exists (static file in public/downloads).
   // For now redirect to order page with hash so user sees their order; add real files to public/downloads/ later.
