@@ -1,9 +1,10 @@
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
+import Stripe from "stripe";
 
 import { authOptions } from "@/lib/authOptions";
 import { prisma } from "@/lib/prisma";
-import { appBaseUrl, getConnectStripeClient } from "@/lib/stripeConnectDemo";
+import { appBaseUrl, getConnectStripeClient, stripeConnectErrorMessage } from "@/lib/stripeConnectDemo";
 
 export const runtime = "nodejs";
 
@@ -29,17 +30,45 @@ export async function POST(request: NextRequest) {
 
   const baseUrl = appBaseUrl(request.nextUrl.origin);
   const stripeClient = getConnectStripeClient();
-  const accountLink = await stripeClient.v2.core.accountLinks.create({
-    account: accountId,
-    use_case: {
-      type: "account_onboarding",
-      account_onboarding: {
-        configurations: ["merchant", "customer"],
-        refresh_url: `${baseUrl}/account/connect-demo`,
-        return_url: `${baseUrl}/account/connect-demo?accountId=${accountId}`,
+  try {
+    const accountLink = await stripeClient.v2.core.accountLinks.create({
+      account: accountId,
+      use_case: {
+        type: "account_onboarding",
+        account_onboarding: {
+          configurations: ["merchant", "customer"],
+          refresh_url: `${baseUrl}/account/connect-demo`,
+          return_url: `${baseUrl}/account/connect-demo?accountId=${encodeURIComponent(accountId)}`,
+        },
       },
-    },
-  });
+    });
 
-  return NextResponse.json({ url: accountLink.url });
+    const url =
+      typeof accountLink.url === "string"
+        ? accountLink.url
+        : (accountLink as unknown as { URL?: string }).URL;
+    if (!url) {
+      return NextResponse.json(
+        {
+          error: "Stripe returned an account link without a URL. Check the API response in server logs.",
+        },
+        { status: 502 }
+      );
+    }
+    return NextResponse.json({ url });
+  } catch (err) {
+    const msg = stripeConnectErrorMessage(err);
+    const hint =
+      err instanceof Stripe.errors.StripeError
+        ? "If this persists, confirm STRIPE_SECRET_KEY is test/live to match the account, and that return URLs use the same host/port you are browsing (localhost:3001 vs NEXTAUTH_URL)."
+        : undefined;
+    const status =
+      err instanceof Stripe.errors.StripeError &&
+      typeof err.statusCode === "number" &&
+      err.statusCode >= 400 &&
+      err.statusCode < 600
+        ? err.statusCode
+        : 502;
+    return NextResponse.json({ error: msg, hint }, { status });
+  }
 }

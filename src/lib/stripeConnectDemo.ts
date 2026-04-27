@@ -64,8 +64,28 @@ export function requireEnv(name: string): string {
   return value;
 }
 
+const trimTrailingSlash = (u: string) => u.replace(/\/$/, "");
+
+/**
+ * Public base URL for Connect return/refresh links, Checkout success/cancel, etc.
+ * On localhost / 127.0.0.1, prefer the **request** origin so `NEXTAUTH_URL` (often
+ * `http://localhost:3000`) does not send Stripe the wrong port when you use `dev:3001`.
+ */
 export function appBaseUrl(originFromRequest?: string): string {
-  return process.env.NEXTAUTH_URL || originFromRequest || "http://localhost:3000";
+  if (originFromRequest) {
+    try {
+      const req = new URL(originFromRequest);
+      const h = req.hostname.toLowerCase();
+      if (h === "localhost" || h === "127.0.0.1" || h === "[::1]") {
+        return trimTrailingSlash(originFromRequest);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  if (process.env.NEXTAUTH_URL) return trimTrailingSlash(process.env.NEXTAUTH_URL);
+  if (originFromRequest) return trimTrailingSlash(originFromRequest);
+  return "http://localhost:3000";
 }
 
 export async function fetchConnectAccountStatus(accountId: string): Promise<ConnectAccountStatus> {

@@ -70,9 +70,19 @@ export function ConnectDemoDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ displayName, contactEmail }),
       });
-      const data = await res.json();
+      let data: { error?: string; message?: string; hint?: string; recoverableAccountId?: string } = {};
+      try {
+        data = (await res.json()) as typeof data;
+      } catch {
+        const raw = await res.text().catch(() => "");
+        setError(
+          `Create account failed (HTTP ${res.status}). ${raw ? `Response: ${raw.slice(0, 220)}` : "Server response was not JSON."}`
+        );
+        return;
+      }
       if (!res.ok) {
-        setError(data.error || "Failed to create connected account.");
+        const parts = [data.error, data.hint].filter((x): x is string => Boolean(x && x.trim()));
+        setError(parts.length ? parts.join(" ") : `Create account failed (HTTP ${res.status}).`);
         if (typeof data.recoverableAccountId === "string") {
           setExistingAccountId(data.recoverableAccountId);
           setMessage("A Stripe account was created. Paste/link it below to recover local mapping.");
@@ -83,8 +93,8 @@ export function ConnectDemoDashboard() {
       setDisplayName("");
       setContactEmail("");
       await loadAccount();
-    } catch {
-      setError("Failed to create connected account.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create connected account.");
     } finally {
       setSaving(false);
     }
@@ -130,14 +140,52 @@ export function ConnectDemoDashboard() {
     setMessage("");
     try {
       const res = await fetch("/api/connect/onboarding-link", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok || !data.url) {
-        setError(data.error || "Failed to create onboarding link.");
+      let data: { url?: string; error?: string; hint?: string } = {};
+      try {
+        data = (await res.json()) as typeof data;
+      } catch {
+        setError(
+          `Onboarding link failed (HTTP ${res.status}). Response was not JSON — see the Network tab or server terminal for the Stripe error.`
+        );
         return;
       }
-      window.location.href = data.url as string;
+      const url = typeof data.url === "string" ? data.url : undefined;
+      if (!res.ok || !url) {
+        const parts = [data.error, data.hint].filter((x): x is string => Boolean(x && x.trim()));
+        setError(parts.length ? parts.join(" ") : "Failed to create onboarding link.");
+        return;
+      }
+      window.location.href = url;
     } catch {
       setError("Failed to create onboarding link.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function clearConnectMapping() {
+    if (!confirm("Clear the saved Connect account for this user? You can create a new one after.")) return;
+    setSaving(true);
+    setError("");
+    setMessage("");
+    try {
+      const res = await fetch("/api/connect/account", { method: "DELETE" });
+      let data: { error?: string; message?: string } = {};
+      try {
+        data = (await res.json()) as typeof data;
+      } catch {
+        setError(`Clear failed (HTTP ${res.status}).`);
+        return;
+      }
+      if (!res.ok) {
+        setError(data.error || "Could not clear Connect mapping.");
+        return;
+      }
+      setMessage(data.message || "Mapping cleared.");
+      await loadAccount();
+    } catch {
+      setError("Could not clear Connect mapping.");
+    } finally {
       setSaving(false);
     }
   }
@@ -273,29 +321,45 @@ export function ConnectDemoDashboard() {
             </div>
           </div>
         ) : (
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => void beginOnboarding()}
-              disabled={saving}
-              className="inline-flex h-10 items-center justify-center rounded-full bg-fix-cta px-4 text-sm font-medium text-fix-cta-foreground hover:opacity-90 disabled:opacity-50"
-            >
-              Onboard to collect payments
-            </button>
-            <button
-              type="button"
-              onClick={() => void loadAccount()}
-              disabled={saving}
-              className="inline-flex h-10 items-center justify-center rounded-full border border-fix-border/30 bg-fix-surface px-4 text-sm font-medium text-fix-heading hover:bg-fix-bg-muted disabled:opacity-50"
-            >
-              Refresh status
-            </button>
-            <a
-              href={`/connect-store/${accountId}`}
-              className="inline-flex h-10 items-center justify-center rounded-full border border-fix-border/30 bg-fix-surface px-4 text-sm font-medium text-fix-heading hover:bg-fix-bg-muted"
-            >
-              Open storefront page
-            </a>
+          <div className="mt-4 space-y-3">
+            <p className="text-xs text-fix-text-muted">
+              “Onboard” opens Stripe&apos;s hosted onboarding flow in this browser tab (not the Stripe Dashboard). Use
+              the same port you use for this app (e.g. localhost:3001) so return URLs match.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => void beginOnboarding()}
+                disabled={saving}
+                className="inline-flex h-10 items-center justify-center rounded-full bg-fix-cta px-4 text-sm font-medium text-fix-cta-foreground hover:opacity-90 disabled:opacity-50"
+              >
+                Onboard to collect payments
+              </button>
+              <button
+                type="button"
+                onClick={() => void loadAccount()}
+                disabled={saving}
+                className="inline-flex h-10 items-center justify-center rounded-full border border-fix-border/30 bg-fix-surface px-4 text-sm font-medium text-fix-heading hover:bg-fix-bg-muted disabled:opacity-50"
+              >
+                Refresh status
+              </button>
+              <a
+                href={`/connect-store/${accountId}`}
+                className="inline-flex h-10 items-center justify-center rounded-full border border-fix-border/30 bg-fix-surface px-4 text-sm font-medium text-fix-heading hover:bg-fix-bg-muted"
+              >
+                Open storefront page
+              </a>
+              {process.env.NODE_ENV === "development" ? (
+                <button
+                  type="button"
+                  onClick={() => void clearConnectMapping()}
+                  disabled={saving}
+                  className="inline-flex h-10 items-center justify-center rounded-full border border-red-300/60 bg-red-50 px-4 text-sm font-medium text-red-900 hover:bg-red-100 disabled:opacity-50"
+                >
+                  Clear mapping (dev)
+                </button>
+              ) : null}
+            </div>
           </div>
         )}
       </Card>
